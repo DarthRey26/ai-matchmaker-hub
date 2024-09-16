@@ -12,8 +12,11 @@ const Dashboard = ({ students, companies }) => {
 
   const chartData = companies.map(company => ({
     name: company.name,
-    students: students.filter(s => s.company1 === company.name || s.company2 === company.name).length,
-    matches: students.filter(s => (s.company1 === company.name && s.outcome1 === 'Accepted') || (s.company2 === company.name && s.outcome2 === 'Accepted')).length,
+    slots: company.slots || 2, // Assuming each company has 2 slots by default
+    matches: students.filter(s => 
+      (s.company1 === company.name && s.outcome1 === 'Accepted') || 
+      (s.company2 === company.name && s.outcome2 === 'Accepted')
+    ).length,
   }));
 
   return (
@@ -37,7 +40,7 @@ const Dashboard = ({ students, companies }) => {
         </Card>
       </div>
       <Card className="p-4">
-        <h2 className="text-xl font-bold mb-4">Matching Overview</h2>
+        <h2 className="text-xl font-bold mb-4">Company Slots and Matches</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -45,8 +48,8 @@ const Dashboard = ({ students, companies }) => {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="students" fill="#8884d8" name="Students" />
-            <Bar dataKey="matches" fill="#82ca9d" name="Matches" />
+            <Bar dataKey="slots" fill="#8884d8" name="Available Slots" />
+            <Bar dataKey="matches" fill="#82ca9d" name="Successful Matches" />
           </BarChart>
         </ResponsiveContainer>
       </Card>
