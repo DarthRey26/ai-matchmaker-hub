@@ -79,7 +79,7 @@ const MatchingView = () => {
                 <MatchingViewRow
                   key={student.id}
                   student={student}
-                  companies={companies}
+                  companies={companies.map(c => c.name)}
                   onOutcomeChange={handleOutcomeChange}
                   onReassign={handleReassign}
                   onBackupCompanyChange={handleBackupCompanyChange}
