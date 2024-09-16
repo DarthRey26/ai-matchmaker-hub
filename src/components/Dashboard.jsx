@@ -2,21 +2,19 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const Dashboard = () => {
-  // Fake data for the dashboard
+const Dashboard = ({ students, companies }) => {
   const stats = {
-    totalStudents: 150,
-    totalCompanies: 50,
-    successfulMatches: 75,
-    pendingMatches: 25,
+    totalStudents: students.length,
+    totalCompanies: companies.length,
+    successfulMatches: students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length,
+    pendingMatches: students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length,
   };
 
-  const chartData = [
-    { industry: 'Law', students: 40, companies: 15, matches: 20 },
-    { industry: 'Finance', students: 50, companies: 20, matches: 30 },
-    { industry: 'Marketing', students: 30, companies: 10, matches: 15 },
-    { industry: 'Engineering', students: 30, companies: 5, matches: 10 },
-  ];
+  const chartData = companies.map(company => ({
+    name: company.name,
+    students: students.filter(s => s.company1 === company.name || s.company2 === company.name).length,
+    matches: students.filter(s => (s.company1 === company.name && s.outcome1 === 'Accepted') || (s.company2 === company.name && s.outcome2 === 'Accepted')).length,
+  }));
 
   return (
     <div>
@@ -43,13 +41,12 @@ const Dashboard = () => {
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="industry" />
+            <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="students" fill="#8884d8" />
-            <Bar dataKey="companies" fill="#82ca9d" />
-            <Bar dataKey="matches" fill="#ffc658" />
+            <Bar dataKey="students" fill="#8884d8" name="Students" />
+            <Bar dataKey="matches" fill="#82ca9d" name="Matches" />
           </BarChart>
         </ResponsiveContainer>
       </Card>

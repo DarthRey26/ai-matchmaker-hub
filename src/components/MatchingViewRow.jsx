@@ -6,7 +6,7 @@ import { CompanyCell } from './CompanyCell';
 import { OutcomeCell } from './OutcomeCell';
 import { DetailDialog } from './DetailDialog';
 
-export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassign }) => {
+export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassign, onBackupCompanyChange }) => {
   return (
     <TableRow>
       <TableCell>{student.name}</TableCell>
@@ -49,7 +49,11 @@ export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassig
         </TooltipProvider>
       </TableCell>
       <TableCell>
-        <DetailDialog student={student} />
+        <DetailDialog 
+          student={student} 
+          companies={companies}
+          onBackupCompanyChange={onBackupCompanyChange}
+        />
       </TableCell>
     </TableRow>
   );
