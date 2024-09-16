@@ -15,7 +15,7 @@ export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassig
       <CompanyCell
         student={student}
         companyField="company1"
-        companies={companies}
+        companies={companies.map(c => c.name)}
         onReassign={onReassign}
       />
       <OutcomeCell
@@ -26,7 +26,7 @@ export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassig
       <CompanyCell
         student={student}
         companyField="company2"
-        companies={companies}
+        companies={companies.map(c => c.name)}
         onReassign={onReassign}
         disabled={student.outcome1 === 'Accepted'}
       />
