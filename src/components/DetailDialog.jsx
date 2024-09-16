@@ -33,12 +33,12 @@ export const DetailDialog = ({ student, companies, onBackupCompanyChange }) => {
           <p className="mt-4"><strong>{student.company2}:</strong> {student.match2}% match</p>
           <p className="mt-2">{getCompanySummary(student.company2)}</p>
           <h3 className="text-lg font-semibold mt-4 mb-2">Backup Company</h3>
-          <Select value={student.backupCompany} onValueChange={(value) => onBackupCompanyChange(student.id, value)}>
+          <Select value={student.backupCompany || "none"} onValueChange={(value) => onBackupCompanyChange(student.id, value === "none" ? "" : value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select backup company" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {companies.map((company) => (
                 <SelectItem key={company.name} value={company.name}>
                   {company.name}
