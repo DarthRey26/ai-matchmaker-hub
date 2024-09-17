@@ -21,11 +21,6 @@ const Index = () => {
     }
   }, []);
 
-  const handleCompaniesExtracted = (extractedCompanies) => {
-    setCompanies(extractedCompanies);
-    localStorage.setItem('companies', JSON.stringify(extractedCompanies));
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -44,7 +39,7 @@ const Index = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold mb-4">File Upload and Download</h2>
-            <FileUploadDownload onCompaniesExtracted={handleCompaniesExtracted} />
+            <FileUploadDownload />
           </div>
         </div>
       </main>
