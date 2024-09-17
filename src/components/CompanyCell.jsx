@@ -9,7 +9,7 @@ export const CompanyCell = ({ student, companyField, matchField, companies, onRe
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <span className="truncate max-w-[120px]">{student[companyField]}</span>
-          <Badge variant="secondary">{student[matchField]}%</Badge>
+          <Badge variant="secondary" className="ml-2">{student[matchField]}%</Badge>
         </div>
         <ReassignDialog
           studentId={student.id}
