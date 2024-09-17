@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from "@/components/ui/button";
 import { MatchingViewRow } from '../components/MatchingViewRow';
+import { generateCSV, downloadCSV } from '../utils/csvUtils';
 
 const MatchingView = () => {
   const [companies, setCompanies] = useState(() => {
@@ -61,13 +63,21 @@ const MatchingView = () => {
     }));
   };
 
+  const handleDownloadCSV = () => {
+    const csvContent = generateCSV(students);
+    downloadCSV(csvContent, 'student_company_matching.csv');
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Student-Company Matching</h1>
-        <Link to="/" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Back to Dashboard
-        </Link>
+        <div className="space-x-2">
+          <Button onClick={handleDownloadCSV}>Download CSV</Button>
+          <Link to="/" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
       <Card>
         <CardContent>

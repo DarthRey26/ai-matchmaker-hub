@@ -28,19 +28,6 @@ const FileUploadDownload = () => {
     }
   };
 
-  const handleDownload = () => {
-    // This is a placeholder function. In a real application,
-    // you would generate or fetch the CSV data here.
-    const csvContent = "data:text/csv;charset=utf-8,Name,Age\nJohn,30\nJane,25";
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "data.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,9 +51,6 @@ const FileUploadDownload = () => {
         </div>
         <Button type="submit">Upload Files</Button>
       </form>
-      <div>
-        <Button onClick={handleDownload}>Download CSV</Button>
-      </div>
     </div>
   );
 };
