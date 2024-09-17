@@ -3,56 +3,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { extractCompanyInfo } from '../utils/pdfExtractor';
 
-const FileUploadDownload = () => {
-  const [studentCVs, setStudentCVs] = useState(null);
-  const [companyDetails, setCompanyDetails] = useState(null);
+const FileUploadDownload = ({ onCompaniesExtracted }) => {
+  const [companyFiles, setCompanyFiles] = useState(null);
 
-  const handleFileUpload = (event, setFile) => {
+  const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/zip') {
-      setFile(file);
+      setCompanyFiles(file);
     } else {
       alert('Please upload a zip file');
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (studentCVs && companyDetails) {
-      console.log('Files uploaded:', studentCVs, companyDetails);
-      alert(`Uploaded files: ${studentCVs.name} and ${companyDetails.name}`);
+    if (companyFiles) {
+      try {
+        const extractedCompanies = await extractCompanyInfo(companyFiles);
+        onCompaniesExtracted(extractedCompanies);
+        alert(`Successfully extracted information from ${extractedCompanies.length} company files.`);
+      } catch (error) {
+        console.error('Error extracting company information:', error);
+        alert('An error occurred while processing the files. Please try again.');
+      }
     } else {
-      alert('Please upload both zip files');
+      alert('Please upload a zip file containing company PDFs');
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Files</CardTitle>
+        <CardTitle>Upload Company Files</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="studentCVs">Upload Student CVs (Zipped)</Label>
+            <Label htmlFor="companyFiles">Upload Company PDFs (Zipped)</Label>
             <Input 
-              id="studentCVs" 
+              id="companyFiles" 
               type="file" 
               accept=".zip" 
-              onChange={(e) => handleFileUpload(e, setStudentCVs)} 
+              onChange={handleFileUpload} 
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyDetails">Upload Company Details (Zipped)</Label>
-            <Input 
-              id="companyDetails" 
-              type="file" 
-              accept=".zip" 
-              onChange={(e) => handleFileUpload(e, setCompanyDetails)} 
-            />
-          </div>
-          <Button type="submit" className="w-full">Upload Files</Button>
+          <Button type="submit" className="w-full">Extract Company Information</Button>
         </form>
       </CardContent>
     </Card>
