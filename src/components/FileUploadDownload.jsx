@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const FileUploadDownload = () => {
-  const [file1, setFile1] = useState(null);
-  const [file2, setFile2] = useState(null);
+  const [studentCVs, setStudentCVs] = useState(null);
+  const [companyDetails, setCompanyDetails] = useState(null);
 
   const handleFileUpload = (event, setFile) => {
     const file = event.target.files[0];
@@ -18,11 +18,11 @@ const FileUploadDownload = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (file1 && file2) {
+    if (studentCVs && companyDetails) {
       // Here you would typically send the files to a server
-      console.log('Files uploaded:', file1, file2);
+      console.log('Files uploaded:', studentCVs, companyDetails);
       // For demo purposes, we'll just log the file names
-      alert(`Uploaded files: ${file1.name} and ${file2.name}`);
+      alert(`Uploaded files: ${studentCVs.name} and ${companyDetails.name}`);
     } else {
       alert('Please upload both zip files');
     }
@@ -32,21 +32,21 @@ const FileUploadDownload = () => {
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="file1">Upload Zip File 1</Label>
+          <Label htmlFor="studentCVs">Upload Student CVs (Zipped)</Label>
           <Input 
-            id="file1" 
+            id="studentCVs" 
             type="file" 
             accept=".zip" 
-            onChange={(e) => handleFileUpload(e, setFile1)} 
+            onChange={(e) => handleFileUpload(e, setStudentCVs)} 
           />
         </div>
         <div>
-          <Label htmlFor="file2">Upload Zip File 2</Label>
+          <Label htmlFor="companyDetails">Upload Company Details (Zipped)</Label>
           <Input 
-            id="file2" 
+            id="companyDetails" 
             type="file" 
             accept=".zip" 
-            onChange={(e) => handleFileUpload(e, setFile2)} 
+            onChange={(e) => handleFileUpload(e, setCompanyDetails)} 
           />
         </div>
         <Button type="submit">Upload Files</Button>
