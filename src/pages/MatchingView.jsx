@@ -78,9 +78,9 @@ const MatchingView = () => {
                 <TableHead>School</TableHead>
                 <TableHead>Faculty</TableHead>
                 <TableHead>Company 1</TableHead>
-                <TableHead>Outcome 1</TableHead>
+                <TableHead>1st Outcome</TableHead>
                 <TableHead>Company 2</TableHead>
-                <TableHead>Outcome 2</TableHead>
+                <TableHead>2nd Outcome</TableHead>
                 <TableHead>Backup Company</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
