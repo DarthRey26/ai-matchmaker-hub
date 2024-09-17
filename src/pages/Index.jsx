@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
 import FileUploadDownload from '../components/FileUploadDownload';
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [students, setStudents] = useState([]);
@@ -27,15 +28,16 @@ const Index = () => {
           <h1 className="text-3xl font-bold text-gray-900">IRIS - AI-Powered Student-Company Matching</h1>
         </div>
       </header>
-      <main>
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <Dashboard students={students} companies={companies} />
-          <div className="mt-8">
-            <Link to="/matching" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-              Go to Student-Company Matching
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <Dashboard students={students} companies={companies} />
+        <div className="mt-8 space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Actions</h2>
+            <Link to="/matching">
+              <Button className="w-full sm:w-auto">Go to Student-Company Matching</Button>
             </Link>
           </div>
-          <div className="mt-8">
+          <div>
             <h2 className="text-2xl font-bold mb-4">File Upload and Download</h2>
             <FileUploadDownload />
           </div>

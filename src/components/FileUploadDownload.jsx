@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FileUploadDownload = () => {
   const [studentCVs, setStudentCVs] = useState(null);
@@ -19,9 +20,7 @@ const FileUploadDownload = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (studentCVs && companyDetails) {
-      // Here you would typically send the files to a server
       console.log('Files uploaded:', studentCVs, companyDetails);
-      // For demo purposes, we'll just log the file names
       alert(`Uploaded files: ${studentCVs.name} and ${companyDetails.name}`);
     } else {
       alert('Please upload both zip files');
@@ -29,29 +28,34 @@ const FileUploadDownload = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="studentCVs">Upload Student CVs (Zipped)</Label>
-          <Input 
-            id="studentCVs" 
-            type="file" 
-            accept=".zip" 
-            onChange={(e) => handleFileUpload(e, setStudentCVs)} 
-          />
-        </div>
-        <div>
-          <Label htmlFor="companyDetails">Upload Company Details (Zipped)</Label>
-          <Input 
-            id="companyDetails" 
-            type="file" 
-            accept=".zip" 
-            onChange={(e) => handleFileUpload(e, setCompanyDetails)} 
-          />
-        </div>
-        <Button type="submit">Upload Files</Button>
-      </form>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Upload Files</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="studentCVs">Upload Student CVs (Zipped)</Label>
+            <Input 
+              id="studentCVs" 
+              type="file" 
+              accept=".zip" 
+              onChange={(e) => handleFileUpload(e, setStudentCVs)} 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyDetails">Upload Company Details (Zipped)</Label>
+            <Input 
+              id="companyDetails" 
+              type="file" 
+              accept=".zip" 
+              onChange={(e) => handleFileUpload(e, setCompanyDetails)} 
+            />
+          </div>
+          <Button type="submit" className="w-full">Upload Files</Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

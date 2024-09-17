@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from "@/components/ui/button";
 import { MatchingViewRow } from '../components/MatchingViewRow';
@@ -70,16 +70,16 @@ const MatchingView = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Student-Company Matching</h1>
-        <div className="space-x-2">
-          <Button onClick={handleDownloadCSV}>Download CSV</Button>
-          <Link to="/" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
       <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold">Student-Company Matching</CardTitle>
+          <div className="space-x-2">
+            <Button onClick={handleDownloadCSV}>Download CSV</Button>
+            <Link to="/">
+              <Button variant="outline">Back to Dashboard</Button>
+            </Link>
+          </div>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
