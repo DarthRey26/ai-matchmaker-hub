@@ -8,63 +8,55 @@ import { DetailDialog } from './DetailDialog';
 
 export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassign, onBackupCompanyChange }) => {
   return (
-    <>
-      <TableRow>
-        <TableCell rowSpan={2}>{student.name}</TableCell>
-        <TableCell rowSpan={2}>{student.school}</TableCell>
-        <TableCell rowSpan={2}>{student.faculty}</TableCell>
-        <CompanyCell
-          student={student}
-          companyField="company1"
-          companies={companies.map(c => c.name)}
-          onReassign={onReassign}
-          showPercentage={false}
+    <TableRow>
+      <TableCell>{student.name}</TableCell>
+      <TableCell>{student.school}</TableCell>
+      <TableCell>{student.faculty}</TableCell>
+      <CompanyCell
+        student={student}
+        companyField="company1"
+        matchField="match1"
+        companies={companies.map(c => c.name)}
+        onReassign={onReassign}
+      />
+      <OutcomeCell
+        student={student}
+        outcomeField="outcome1"
+        onOutcomeChange={onOutcomeChange}
+      />
+      <CompanyCell
+        student={student}
+        companyField="company2"
+        matchField="match2"
+        companies={companies.map(c => c.name)}
+        onReassign={onReassign}
+        disabled={student.outcome1 === 'Accepted'}
+      />
+      <OutcomeCell
+        student={student}
+        outcomeField="outcome2"
+        onOutcomeChange={onOutcomeChange}
+        disabled={student.outcome1 === 'Accepted'}
+      />
+      <TableCell>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline">{student.backupCompany || 'None'}</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Backup Company</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </TableCell>
+      <TableCell>
+        <DetailDialog 
+          student={student} 
+          companies={companies}
+          onBackupCompanyChange={onBackupCompanyChange}
         />
-        <OutcomeCell
-          student={student}
-          outcomeField="outcome1"
-          onOutcomeChange={onOutcomeChange}
-        />
-        <CompanyCell
-          student={student}
-          companyField="company2"
-          companies={companies.map(c => c.name)}
-          onReassign={onReassign}
-          disabled={student.outcome1 === 'Accepted'}
-          showPercentage={false}
-        />
-        <OutcomeCell
-          student={student}
-          outcomeField="outcome2"
-          onOutcomeChange={onOutcomeChange}
-          disabled={student.outcome1 === 'Accepted'}
-        />
-        <TableCell rowSpan={2}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="outline">{student.backupCompany || 'None'}</Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Backup Company</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </TableCell>
-        <TableCell rowSpan={2}>
-          <DetailDialog 
-            student={student} 
-            companies={companies}
-            onBackupCompanyChange={onBackupCompanyChange}
-          />
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell className="text-center">{student.match1}%</TableCell>
-        <TableCell></TableCell>
-        <TableCell className="text-center">{student.match2}%</TableCell>
-        <TableCell></TableCell>
-      </TableRow>
-    </>
+      </TableCell>
+    </TableRow>
   );
 };

@@ -74,19 +74,15 @@ const MatchingView = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead rowSpan={2}>Student Name</TableHead>
-                <TableHead rowSpan={2}>School</TableHead>
-                <TableHead rowSpan={2}>Faculty</TableHead>
-                <TableHead colSpan={2}>Company 1</TableHead>
-                <TableHead colSpan={2}>Company 2</TableHead>
-                <TableHead rowSpan={2}>Backup Company</TableHead>
-                <TableHead rowSpan={2}>Actions</TableHead>
-              </TableRow>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Outcome</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Outcome</TableHead>
+                <TableHead>Student Name</TableHead>
+                <TableHead>School</TableHead>
+                <TableHead>Faculty</TableHead>
+                <TableHead>Company 1</TableHead>
+                <TableHead>Outcome 1</TableHead>
+                <TableHead>Company 2</TableHead>
+                <TableHead>Outcome 2</TableHead>
+                <TableHead>Backup Company</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
