@@ -44,28 +44,23 @@ const Dashboard = ({ students, companies }) => {
   const aiMatchingAccuracy = 85.5;
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <Card className="col-span-3 grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-4 gap-4">
+      <Card className="col-span-4 grid grid-cols-5 gap-4">
         {Object.entries(stats).map(([key, value]) => (
           <div key={key} className="p-4 bg-white rounded-lg shadow">
             <h3 className="text-sm font-medium text-gray-500">{key.split(/(?=[A-Z])/).join(' ')}</h3>
             <p className="text-2xl font-semibold">{value}</p>
           </div>
         ))}
+        <div className={`p-4 rounded-lg shadow ${aiMatchingAccuracy >= 80 ? "bg-green-100" : "bg-red-100"}`}>
+          <h3 className="text-sm font-medium text-gray-500">AI Matching Accuracy</h3>
+          <p className="text-2xl font-semibold">{aiMatchingAccuracy.toFixed(1)}%</p>
+          {aiMatchingAccuracy < 80 && (
+            <p className="text-red-600 text-xs mt-1">Retraining necessary</p>
+          )}
+        </div>
       </Card>
       
-      <Card className={`col-span-1 ${aiMatchingAccuracy >= 80 ? "bg-green-100" : "bg-red-100"}`}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">AI Matching Accuracy</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{aiMatchingAccuracy.toFixed(1)}%</div>
-          {aiMatchingAccuracy < 80 && (
-            <p className="text-red-600 text-sm mt-2">Retraining necessary</p>
-          )}
-        </CardContent>
-      </Card>
-
       <Card className="col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Students vs Companies</CardTitle>
@@ -136,28 +131,24 @@ const Dashboard = ({ students, companies }) => {
         </CardContent>
       </Card>
 
-      <Card className="col-span-1">
+      <Card className="col-span-4">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Student Match Status</CardTitle>
         </CardHeader>
         <CardContent className="h-48">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={matchStatusData}
-                cx="50%"
-                cy="50%"
-                outerRadius={60}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
+            <BarChart data={matchStatusData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8">
                 {matchStatusData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
