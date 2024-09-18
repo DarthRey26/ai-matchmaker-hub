@@ -1,6 +1,7 @@
-import { HomeIcon, UsersIcon } from "lucide-react";
+import { HomeIcon, UsersIcon, FileTextIcon } from "lucide-react";
 import Index from "./pages/Index.jsx";
 import MatchingView from "./pages/MatchingView.jsx";
+import Documents from "./pages/Documents.jsx";
 
 export const navItems = [
   {
@@ -14,5 +15,11 @@ export const navItems = [
     to: "/matching",
     icon: <UsersIcon className="h-4 w-4" />,
     page: <MatchingView />,
+  },
+  {
+    title: "Documents",
+    to: "/documents",
+    icon: <FileTextIcon className="h-4 w-4" />,
+    page: <Documents />,
   },
 ];

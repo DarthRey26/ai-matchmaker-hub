@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
-import FileUploadDownload from '../components/FileUploadDownload';
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
@@ -21,16 +20,6 @@ const Index = () => {
     }
   }, []);
 
-  const handleCompaniesExtracted = (extractedCompanies) => {
-    const updatedCompanies = extractedCompanies.map((company, index) => ({
-      ...company,
-      slots: 2, // Default number of slots
-      id: index + 1
-    }));
-    setCompanies(updatedCompanies);
-    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -43,13 +32,14 @@ const Index = () => {
         <div className="mt-8 space-y-8">
           <div>
             <h2 className="text-2xl font-bold mb-4">Actions</h2>
-            <Link to="/matching">
-              <Button className="w-full sm:w-auto">Go to Student-Company Matching</Button>
-            </Link>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold mb-4">File Upload and Download</h2>
-            <FileUploadDownload onCompaniesExtracted={handleCompaniesExtracted} />
+            <div className="space-x-4">
+              <Link to="/matching">
+                <Button className="w-full sm:w-auto">Go to Student-Company Matching</Button>
+              </Link>
+              <Link to="/documents">
+                <Button className="w-full sm:w-auto">View Documents</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </main>
