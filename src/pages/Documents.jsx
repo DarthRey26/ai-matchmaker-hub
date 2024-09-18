@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from "@/components/ui/button";
+import Sidebar from '../components/Sidebar';
 
 const Documents = () => {
   const companyDocuments = [
@@ -20,53 +19,55 @@ const Documents = () => {
   ];
 
   return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-2xl font-bold">IRIS Documents</CardTitle>
-          <Link to="/">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Company Documents</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Document Name</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {companyDocuments.map((doc, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{doc.name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Student CVs</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Document Name</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {studentCVs.map((cv, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{cv.name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto py-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-2xl font-bold">IRIS Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Company Documents</h2>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Document Name</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {companyDocuments.map((doc, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{doc.name}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Student CVs</h2>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Document Name</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {studentCVs.map((cv, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{cv.name}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
