@@ -1,114 +1,68 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Dashboard = ({ students, companies }) => {
   const stats = {
-    totalStudents: students.length,
-    totalCompanies: companies.length,
-    successfulMatches: students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length,
-    pendingMatches: students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length,
+    totalStudents: Math.max(0, students.length),
+    totalCompanies: Math.max(0, companies.length),
+    successfulMatches: Math.max(0, students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length),
+    pendingMatches: Math.max(0, students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length),
   };
 
-  const studentsVsCompanies = [
-    { name: 'Students', count: Math.max(0, stats.totalStudents) },
-    { name: 'Companies', count: Math.max(0, stats.totalCompanies) },
-  ];
-
   const matchStatusData = [
-    { name: 'Successful Matches', value: Math.max(0, stats.successfulMatches), color: '#4CAF50' },
-    { name: 'Pending Matches', value: Math.max(0, stats.pendingMatches), color: '#FFC107' },
-    { name: 'Unmatched', value: Math.max(0, stats.totalStudents - stats.successfulMatches - stats.pendingMatches), color: '#F44336' },
+    { name: 'Successful Matches', value: stats.successfulMatches },
+    { name: 'Pending Matches', value: stats.pendingMatches },
+    { name: 'Unmatched', value: Math.max(0, stats.totalStudents - stats.successfulMatches - stats.pendingMatches) },
   ];
 
-  const facultyData = [
-    { name: 'Law', value: 2, color: '#2196F3' },
-    { name: 'Engineering', value: 1, color: '#FF9800' },
-    { name: 'Business', value: 1, color: '#9C27B0' },
-    { name: 'Arts', value: 1, color: '#00BCD4' },
+  const studentsVsCompanies = [
+    { name: 'Students', count: stats.totalStudents },
+    { name: 'Companies', count: stats.totalCompanies },
   ];
 
-  const industryData = [
-    { name: 'Legal', value: 2, color: '#3F51B5' },
-    { name: 'Finance', value: 1, color: '#E91E63' },
-    { name: 'Technology', value: 1, color: '#009688' },
-    { name: 'Marketing', value: 1, color: '#FF5722' },
-  ];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Simulated AI matching accuracy
+  const aiMatchingAccuracy = Math.min(100, Math.max(0, 85.5));
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Card className="col-span-2">
-        <CardHeader>
-          <CardTitle>Dashboard Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-around">
-          {Object.entries(stats).map(([key, value]) => (
-            <div key={key} className="text-center">
-              <h3 className="text-lg font-medium">{key.split(/(?=[A-Z])/).join(' ')}</h3>
-              <p className="text-2xl font-semibold">{Math.max(0, value)}</p>
-            </div>
-          ))}
-        </CardContent>
+    <div className="grid grid-cols-4 gap-4">
+      <Card className="col-span-4 grid grid-cols-5 gap-4">
+        {Object.entries(stats).map(([key, value]) => (
+          <div key={key} className="p-4 bg-white rounded-lg shadow">
+            <h3 className="text-sm font-medium text-gray-500">{key.split(/(?=[A-Z])/).join(' ')}</h3>
+            <p className="text-2xl font-semibold">{value}</p>
+          </div>
+        ))}
+        <div className={`p-4 rounded-lg shadow ${aiMatchingAccuracy >= 80 ? "bg-green-100" : "bg-red-100"}`}>
+          <h3 className="text-sm font-medium text-gray-500">AI Matching Accuracy</h3>
+          <p className="text-2xl font-semibold">{aiMatchingAccuracy.toFixed(1)}%</p>
+          {aiMatchingAccuracy < 80 && (
+            <p className="text-red-600 text-xs mt-1">Retraining necessary</p>
+          )}
+        </div>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Students vs Companies</CardTitle>
+      <Card className="col-span-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Students vs Companies</CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={studentsVsCompanies}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Match Status</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={matchStatusData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value">
-                {matchStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Students by Faculty</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[300px]">
+        <CardContent className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={facultyData}
+                data={studentsVsCompanies}
                 cx="50%"
                 cy="50%"
+                labelLine={false}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey="value"
+                dataKey="count"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
-                {facultyData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {studentsVsCompanies.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -118,24 +72,25 @@ const Dashboard = ({ students, companies }) => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Companies by Industry</CardTitle>
+      <Card className="col-span-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Student Match Status</CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px]">
+        <CardContent className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={industryData}
+                data={matchStatusData}
                 cx="50%"
                 cy="50%"
+                labelLine={false}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
-                {industryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {matchStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
