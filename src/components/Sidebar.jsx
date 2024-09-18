@@ -1,43 +1,45 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { HomeIcon, UsersIcon, FileTextIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
-
-  const navItems = [
-    { title: 'Dashboard', icon: <HomeIcon className="h-5 w-5" />, path: '/' },
-    { title: 'Matching', icon: <UsersIcon className="h-5 w-5" />, path: '/matching' },
-    { title: 'Documents', icon: <FileTextIcon className="h-5 w-5" />, path: '/documents' },
-  ];
 
   return (
-    <div className={`bg-gray-800 text-white ${isCollapsed ? 'w-16' : 'w-64'} min-h-screen p-4 transition-all duration-300 ease-in-out flex flex-col`}>
+    <div className={`bg-gray-800 text-white ${isCollapsed ? 'w-16' : 'w-64'} min-h-screen p-4 transition-all duration-300 ease-in-out`}>
       <div className="flex justify-between items-center mb-6">
         {!isCollapsed && <h2 className="text-2xl font-bold">IRIS</h2>}
         <Button variant="ghost" onClick={() => setIsCollapsed(!isCollapsed)} className="p-1">
           {isCollapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
         </Button>
       </div>
-      <nav className="flex-grow">
+      <nav>
         <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link to={item.path}>
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-${isCollapsed ? 'center' : 'start'} ${
-                    location.pathname === item.path ? 'bg-gray-700' : ''
-                  }`}
-                >
-                  {item.icon}
-                  {!isCollapsed && <span className="ml-2">{item.title}</span>}
-                </Button>
-              </Link>
-            </li>
-          ))}
+          <li>
+            <Link to="/">
+              <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
+                <HomeIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                {!isCollapsed && 'Dashboard'}
+              </Button>
+            </Link>
+          </li>
+          <li>
+            <Link to="/matching">
+              <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
+                <UsersIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                {!isCollapsed && 'Student-Company Matching'}
+              </Button>
+            </Link>
+          </li>
+          <li>
+            <Link to="/documents">
+              <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
+                <FileTextIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                {!isCollapsed && 'View Documents'}
+              </Button>
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

@@ -1,27 +1,25 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Dashboard = ({ students, companies }) => {
   const stats = {
-    totalStudents: Math.max(0, students.length),
-    totalCompanies: Math.max(0, companies.length),
-    successfulMatches: Math.max(0, students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length),
-    pendingMatches: Math.max(0, students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length),
+    totalStudents: students.length,
+    totalCompanies: companies.length,
+    successfulMatches: students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length,
+    pendingMatches: students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length,
   };
 
   const matchStatusData = [
-    { name: 'Successful Matches', value: stats.successfulMatches },
-    { name: 'Pending Matches', value: stats.pendingMatches },
+    { name: 'Successful Matches', value: Math.max(0, stats.successfulMatches) },
+    { name: 'Pending Matches', value: Math.max(0, stats.pendingMatches) },
     { name: 'Unmatched', value: Math.max(0, stats.totalStudents - stats.successfulMatches - stats.pendingMatches) },
   ];
 
   const studentsVsCompanies = [
-    { name: 'Students', count: stats.totalStudents },
-    { name: 'Companies', count: stats.totalCompanies },
+    { name: 'Students', count: Math.max(0, stats.totalStudents) },
+    { name: 'Companies', count: Math.max(0, stats.totalCompanies) },
   ];
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   // Simulated AI matching accuracy
   const aiMatchingAccuracy = Math.min(100, Math.max(0, 85.5));
@@ -32,7 +30,7 @@ const Dashboard = ({ students, companies }) => {
         {Object.entries(stats).map(([key, value]) => (
           <div key={key} className="p-4 bg-white rounded-lg shadow">
             <h3 className="text-sm font-medium text-gray-500">{key.split(/(?=[A-Z])/).join(' ')}</h3>
-            <p className="text-2xl font-semibold">{value}</p>
+            <p className="text-2xl font-semibold">{Math.max(0, value)}</p>
           </div>
         ))}
         <div className={`p-4 rounded-lg shadow ${aiMatchingAccuracy >= 80 ? "bg-green-100" : "bg-red-100"}`}>
@@ -50,24 +48,14 @@ const Dashboard = ({ students, companies }) => {
         </CardHeader>
         <CardContent className="h-48">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={studentsVsCompanies}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {studentsVsCompanies.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <BarChart data={studentsVsCompanies}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
-            </PieChart>
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -78,24 +66,14 @@ const Dashboard = ({ students, companies }) => {
         </CardHeader>
         <CardContent className="h-48">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={matchStatusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {matchStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <BarChart data={matchStatusData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
-            </PieChart>
+              <Bar dataKey="value" fill="#8884d8" />
+            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
