@@ -21,6 +21,16 @@ const Index = () => {
     }
   }, []);
 
+  const handleCompaniesExtracted = (extractedCompanies) => {
+    const updatedCompanies = extractedCompanies.map((company, index) => ({
+      ...company,
+      slots: 2, // Default number of slots
+      id: index + 1
+    }));
+    setCompanies(updatedCompanies);
+    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -39,7 +49,7 @@ const Index = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold mb-4">File Upload and Download</h2>
-            <FileUploadDownload />
+            <FileUploadDownload onCompaniesExtracted={handleCompaniesExtracted} />
           </div>
         </div>
       </main>

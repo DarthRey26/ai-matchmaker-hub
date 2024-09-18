@@ -3,56 +3,65 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { extractCompanyDetails } from '../utils/pdfUtils';
+import JSZip from 'jszip';
 
-const FileUploadDownload = () => {
-  const [studentCVs, setStudentCVs] = useState(null);
-  const [companyDetails, setCompanyDetails] = useState(null);
+const FileUploadDownload = ({ onCompaniesExtracted }) => {
+  const [companyZip, setCompanyZip] = useState(null);
 
-  const handleFileUpload = (event, setFile) => {
+  const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/zip') {
-      setFile(file);
+      setCompanyZip(file);
     } else {
       alert('Please upload a zip file');
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (studentCVs && companyDetails) {
-      console.log('Files uploaded:', studentCVs, companyDetails);
-      alert(`Uploaded files: ${studentCVs.name} and ${companyDetails.name}`);
+    if (companyZip) {
+      try {
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(companyZip);
+        const extractedCompanies = [];
+
+        for (const [filename, file] of Object.entries(contents.files)) {
+          if (filename.endsWith('.pdf')) {
+            const pdfBlob = await file.async('blob');
+            const companyDetails = await extractCompanyDetails(pdfBlob);
+            extractedCompanies.push(companyDetails);
+          }
+        }
+
+        onCompaniesExtracted(extractedCompanies);
+        alert(`Successfully extracted details for ${extractedCompanies.length} companies.`);
+      } catch (error) {
+        console.error('Error processing zip file:', error);
+        alert('Error processing the zip file. Please try again.');
+      }
     } else {
-      alert('Please upload both zip files');
+      alert('Please upload a zip file with company PDFs');
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Files</CardTitle>
+        <CardTitle>Upload Company Details</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="studentCVs">Upload Student CVs (Zipped)</Label>
+            <Label htmlFor="companyZip">Upload Company Details (Zipped PDFs)</Label>
             <Input 
-              id="studentCVs" 
+              id="companyZip" 
               type="file" 
               accept=".zip" 
-              onChange={(e) => handleFileUpload(e, setStudentCVs)} 
+              onChange={handleFileUpload} 
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyDetails">Upload Company Details (Zipped)</Label>
-            <Input 
-              id="companyDetails" 
-              type="file" 
-              accept=".zip" 
-              onChange={(e) => handleFileUpload(e, setCompanyDetails)} 
-            />
-          </div>
-          <Button type="submit" className="w-full">Upload Files</Button>
+          <Button type="submit" className="w-full">Upload and Process</Button>
         </form>
       </CardContent>
     </Card>
