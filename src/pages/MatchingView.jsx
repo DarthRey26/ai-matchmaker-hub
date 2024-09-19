@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from "@/components/ui/button";
 import { MatchingViewRow } from '../components/MatchingViewRow';
 import { generateCSV, downloadCSV } from '../utils/csvUtils';
+import Sidebar from '../components/Sidebar';
 
 const MatchingView = () => {
   const [companies, setCompanies] = useState(() => {
@@ -69,47 +69,47 @@ const MatchingView = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-2xl font-bold">Student-Company Matching</CardTitle>
-          <div className="space-x-2">
-            <Button onClick={handleDownloadCSV}>Download CSV</Button>
-            <Link to="/">
-              <Button variant="outline">Back to Dashboard</Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student Name</TableHead>
-                <TableHead>School</TableHead>
-                <TableHead>Faculty</TableHead>
-                <TableHead>Company 1</TableHead>
-                <TableHead>1st Outcome</TableHead>
-                <TableHead>Company 2</TableHead>
-                <TableHead>2nd Outcome</TableHead>
-                <TableHead>Backup Company</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => (
-                <MatchingViewRow
-                  key={student.id}
-                  student={student}
-                  companies={companies}
-                  onOutcomeChange={handleOutcomeChange}
-                  onReassign={handleReassign}
-                  onBackupCompanyChange={handleBackupCompanyChange}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto py-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-2xl font-bold">Student-Company Matching</CardTitle>
+              <Button onClick={handleDownloadCSV}>Download CSV</Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead>Faculty</TableHead>
+                    <TableHead>Company 1</TableHead>
+                    <TableHead>1st Outcome</TableHead>
+                    <TableHead>Company 2</TableHead>
+                    <TableHead>2nd Outcome</TableHead>
+                    <TableHead>Backup Company</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((student) => (
+                    <MatchingViewRow
+                      key={student.id}
+                      student={student}
+                      companies={companies}
+                      onOutcomeChange={handleOutcomeChange}
+                      onReassign={handleReassign}
+                      onBackupCompanyChange={handleBackupCompanyChange}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
