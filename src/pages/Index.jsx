@@ -22,15 +22,8 @@ const Index = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl font-bold text-gray-900">IRIS - AI-Powered Student-Company Matching</h1>
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto p-4">
-          <Dashboard students={students} companies={companies} />
-        </main>
+      <div className="flex-1 overflow-auto">
+        <Dashboard students={students} companies={companies} />
       </div>
     </div>
   );
