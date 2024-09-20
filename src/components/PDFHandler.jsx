@@ -11,10 +11,6 @@ const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
-console.log('CLIENT_ID:', CLIENT_ID);
-console.log('API_KEY:', API_KEY);
-console.log('All env vars:', import.meta.env);
-
 const PDFHandler = ({ onPDFsProcessed }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [pdfTexts, setPdfTexts] = useState({});
@@ -22,22 +18,15 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const loadGoogleAPI = () => {
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.onload = () => {
-        window.gapi.load('client:auth2', initClient);
-      };
-      document.body.appendChild(script);
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      window.gapi.load('client:auth2', initClient);
     };
+    document.body.appendChild(script);
 
-    loadGoogleAPI();
     return () => {
-      // Cleanup function to remove the script when component unmounts
-      const script = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
-      if (script) {
-        document.body.removeChild(script);
-      }
+      document.body.removeChild(script);
     };
   }, []);
 
@@ -54,14 +43,14 @@ const PDFHandler = ({ onPDFsProcessed }) => {
       discoveryDocs: DISCOVERY_DOCS,
       scope: SCOPES
     }).then(() => {
-      const auth2 = window.gapi.auth2.getAuthInstance();
-      if (auth2) {
-        auth2.isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(auth2.isSignedIn.get());
-      } else {
+      if (!window.gapi.auth2) {
         console.error('Auth2 instance is null');
         toast.error('Failed to initialize Google Auth. Please try refreshing the page.');
+        return;
       }
+      
+      window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+      updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
       setIsInitialized(true);
     }).catch((error) => {
       console.error('Error initializing Google API client', error);
