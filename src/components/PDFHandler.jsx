@@ -15,27 +15,51 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [pdfTexts, setPdfTexts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isGapiLoaded, setIsGapiLoaded] = useState(false);
 
   useEffect(() => {
     const loadGoogleAPI = () => {
-      if (window.gapi) {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => {
+        setIsGapiLoaded(true);
         window.gapi.load('client:auth2', initClient);
-      } else {
-        console.error('Google API not loaded');
+      };
+      script.onerror = () => {
+        console.error('Failed to load Google API script');
         toast.error('Failed to load Google API. Please check your internet connection and try again.');
-      }
+      };
+      document.body.appendChild(script);
     };
 
     loadGoogleAPI();
+
+    return () => {
+      const script = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
+      if (script) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   const initClient = () => {
+    if (!window.gapi) {
+      console.error('Google API not loaded');
+      toast.error('Google API not loaded. Please refresh the page and try again.');
+      return;
+    }
+
     window.gapi.client.init({
       apiKey: API_KEY,
       clientId: CLIENT_ID,
       discoveryDocs: DISCOVERY_DOCS,
       scope: SCOPES
     }).then(() => {
+      if (!window.gapi.auth2.getAuthInstance()) {
+        console.error('Auth instance not initialized');
+        toast.error('Failed to initialize Google authentication. Please check your credentials and try again.');
+        return;
+      }
       window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
       updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
     }, (error) => {
@@ -49,6 +73,12 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const handleAuthClick = () => {
+    if (!window.gapi || !window.gapi.auth2) {
+      console.error('Google API not fully loaded');
+      toast.error('Google API not fully loaded. Please refresh the page and try again.');
+      return;
+    }
+
     if (!isSignedIn) {
       window.gapi.auth2.getAuthInstance().signIn().catch((error) => {
         console.error('Error signing in:', error);
@@ -63,6 +93,12 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const fetchPDFs = async () => {
+    if (!window.gapi || !window.gapi.client) {
+      console.error('Google API client not loaded');
+      toast.error('Google API client not loaded. Please refresh the page and try again.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await window.gapi.client.drive.files.list({
@@ -113,11 +149,15 @@ const PDFHandler = ({ onPDFsProcessed }) => {
         <CardTitle>Google Drive PDF Integration</CardTitle>
       </CardHeader>
       <CardContent>
-        <Button onClick={handleAuthClick} className="mb-4">
+        <Button 
+          onClick={handleAuthClick} 
+          className="mb-4"
+          disabled={!isGapiLoaded}
+        >
           {isSignedIn ? 'Sign Out' : 'Sign In to Google Drive'}
         </Button>
         {isSignedIn && (
-          <Button onClick={fetchPDFs} disabled={isLoading}>
+          <Button onClick={fetchPDFs} disabled={isLoading || !isGapiLoaded}>
             {isLoading ? 'Processing...' : 'Fetch and Process PDFs'}
           </Button>
         )}
