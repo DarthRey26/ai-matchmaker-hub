@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, PieChart, Pie } from 'recharts';
 
 const Dashboard = ({ students, companies }) => {
@@ -39,9 +39,9 @@ const Dashboard = ({ students, companies }) => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
   return (
-    <div className="flex flex-col gap-6 p-6 bg-gray-100">
-      <h1 className="text-3xl font-bold">IRIS - AI-Powered Student-Company Matching</h1>
-      <div className="grid grid-cols-5 gap-4">
+    <div className="flex flex-col h-screen p-6 bg-gray-100 overflow-hidden">
+      <h1 className="text-3xl font-bold mb-4">IRIS - AI-Powered Student-Company Matching</h1>
+      <div className="grid grid-cols-5 gap-4 mb-4">
         {Object.entries(stats).map(([key, value]) => (
           <Card key={key} className={key === 'Average Match Accuracy' && value > 80 ? 'bg-green-100' : ''}>
             <CardContent className="p-4">
@@ -51,13 +51,11 @@ const Dashboard = ({ students, companies }) => {
           </Card>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Students vs Companies</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+      <div className="grid grid-cols-2 gap-4 flex-grow">
+        <Card className="flex flex-col">
+          <h2 className="text-xl font-semibold p-4">Students vs Companies</h2>
+          <div className="flex-grow">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={studentsVsCompanies}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -67,14 +65,12 @@ const Dashboard = ({ students, companies }) => {
                 <Bar dataKey="count" fill="#8884d8" name="Count" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Student Match Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        <Card className="flex flex-col">
+          <h2 className="text-xl font-semibold p-4">Student Match Status</h2>
+          <div className="flex-grow">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={matchStatusData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -88,59 +84,55 @@ const Dashboard = ({ students, companies }) => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Students by Faculty</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        <Card className="flex flex-col">
+          <h2 className="text-xl font-semibold p-4">Students by Faculty</h2>
+          <div className="flex-grow">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={facultyChartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="80%"
                   fill="#8884d8"
                   dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {facultyChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Companies by Industry</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+        <Card className="flex flex-col">
+          <h2 className="text-xl font-semibold p-4">Companies by Industry</h2>
+          <div className="flex-grow">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={industryChartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="80%"
                   fill="#8884d8"
                   dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {industryChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>
