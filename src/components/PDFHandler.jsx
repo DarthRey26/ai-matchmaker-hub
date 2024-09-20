@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { gapi } from 'gapi-script';
 import * as pdfjs from 'pdfjs-dist';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,21 +18,26 @@ const PDFHandler = ({ onPDFsProcessed }) => {
 
   useEffect(() => {
     const loadGoogleAPI = () => {
-      gapi.load('client:auth2', initClient);
+      window.gapi.load('client:auth2', initClient);
     };
 
-    loadGoogleAPI();
+    if (window.gapi) {
+      loadGoogleAPI();
+    } else {
+      console.error('Google API not loaded');
+      toast.error('Failed to load Google API. Please check your internet connection and try again.');
+    }
   }, []);
 
   const initClient = () => {
-    gapi.client.init({
+    window.gapi.client.init({
       apiKey: API_KEY,
       clientId: CLIENT_ID,
       discoveryDocs: DISCOVERY_DOCS,
       scope: SCOPES
     }).then(() => {
-      gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-      updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+      window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+      updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
     }, (error) => {
       console.error('Error initializing Google API client', error);
       toast.error('Failed to initialize Google API client');
@@ -46,16 +50,16 @@ const PDFHandler = ({ onPDFsProcessed }) => {
 
   const handleAuthClick = () => {
     if (!isSignedIn) {
-      gapi.auth2.getAuthInstance().signIn();
+      window.gapi.auth2.getAuthInstance().signIn();
     } else {
-      gapi.auth2.getAuthInstance().signOut();
+      window.gapi.auth2.getAuthInstance().signOut();
     }
   };
 
   const fetchPDFs = async () => {
     setIsLoading(true);
     try {
-      const response = await gapi.client.drive.files.list({
+      const response = await window.gapi.client.drive.files.list({
         q: "mimeType='application/pdf' and name contains 'IRIS'",
         fields: 'files(id, name, webContentLink)'
       });
