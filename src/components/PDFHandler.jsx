@@ -7,8 +7,8 @@ import { toast } from "sonner";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-const API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
