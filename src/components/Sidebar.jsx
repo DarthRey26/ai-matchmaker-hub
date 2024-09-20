@@ -27,7 +27,7 @@ const Sidebar = () => {
           <li>
             <Link to="/matching">
               <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
-                <UsersIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                <UsersIcon className={`h-6 w-6 ${isCollapsed ? '' : 'mr-2'}`} />
                 {!isCollapsed && 'Student-Company Matching'}
               </Button>
             </Link>
