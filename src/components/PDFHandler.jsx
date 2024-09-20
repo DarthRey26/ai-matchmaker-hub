@@ -6,6 +6,14 @@ import { toast } from "sonner";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
+// Important: Add your production URL to the Google Cloud Console
+// In your Google Cloud Console:
+// 1. Go to APIs & Services > Credentials
+// 2. Edit your OAuth 2.0 Client ID
+// 3. Add your production URL to "Authorized JavaScript origins"
+// 4. Add your production URL + "/oauth2callback" to "Authorized redirect URIs"
+// 5. Save the changes
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
@@ -18,15 +26,23 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => {
-      window.gapi.load('client:auth2', initClient);
+    const loadGoogleAPI = () => {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => {
+        window.gapi.load('client:auth2', initClient);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Google API script');
+        toast.error('Failed to load Google API. Please check your internet connection and try again.');
+      };
+      document.body.appendChild(script);
     };
-    document.body.appendChild(script);
+
+    loadGoogleAPI();
 
     return () => {
-      document.body.removeChild(script);
+      // Clean up if needed
     };
   }, []);
 
