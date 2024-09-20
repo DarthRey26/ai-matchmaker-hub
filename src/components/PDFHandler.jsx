@@ -18,15 +18,15 @@ const PDFHandler = ({ onPDFsProcessed }) => {
 
   useEffect(() => {
     const loadGoogleAPI = () => {
-      window.gapi.load('client:auth2', initClient);
+      if (window.gapi) {
+        window.gapi.load('client:auth2', initClient);
+      } else {
+        console.error('Google API not loaded');
+        toast.error('Failed to load Google API. Please check your internet connection and try again.');
+      }
     };
 
-    if (window.gapi) {
-      loadGoogleAPI();
-    } else {
-      console.error('Google API not loaded');
-      toast.error('Failed to load Google API. Please check your internet connection and try again.');
-    }
+    loadGoogleAPI();
   }, []);
 
   const initClient = () => {
@@ -40,7 +40,7 @@ const PDFHandler = ({ onPDFsProcessed }) => {
       updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
     }, (error) => {
       console.error('Error initializing Google API client', error);
-      toast.error('Failed to initialize Google API client');
+      toast.error('Failed to initialize Google API client. Please check your credentials and try again.');
     });
   };
 
@@ -50,9 +50,15 @@ const PDFHandler = ({ onPDFsProcessed }) => {
 
   const handleAuthClick = () => {
     if (!isSignedIn) {
-      window.gapi.auth2.getAuthInstance().signIn();
+      window.gapi.auth2.getAuthInstance().signIn().catch((error) => {
+        console.error('Error signing in:', error);
+        toast.error('Failed to sign in. Please try again.');
+      });
     } else {
-      window.gapi.auth2.getAuthInstance().signOut();
+      window.gapi.auth2.getAuthInstance().signOut().catch((error) => {
+        console.error('Error signing out:', error);
+        toast.error('Failed to sign out. Please try again.');
+      });
     }
   };
 
@@ -80,7 +86,7 @@ const PDFHandler = ({ onPDFsProcessed }) => {
       toast.success('PDFs processed successfully');
     } catch (error) {
       console.error('Error fetching PDFs:', error);
-      toast.error('Failed to fetch PDFs from Google Drive');
+      toast.error('Failed to fetch PDFs from Google Drive. Please check your permissions and try again.');
     }
     setIsLoading(false);
   };
