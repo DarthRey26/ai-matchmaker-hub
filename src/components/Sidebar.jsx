@@ -19,7 +19,7 @@ const Sidebar = () => {
           <li>
             <Link to="/">
               <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
-                <HomeIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                <HomeIcon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-2'}`} />
                 {!isCollapsed && 'Dashboard'}
               </Button>
             </Link>
@@ -35,7 +35,7 @@ const Sidebar = () => {
           <li>
             <Link to="/documents">
               <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
-                <FileTextIcon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-2'}`} />
+                <FileTextIcon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-2'}`} />
                 {!isCollapsed && 'View Documents'}
               </Button>
             </Link>
