@@ -11,34 +11,59 @@ const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
+console.log('CLIENT_ID:', CLIENT_ID);
+console.log('API_KEY:', API_KEY);
+console.log('All env vars:', import.meta.env);
+
 const PDFHandler = ({ onPDFsProcessed }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [pdfTexts, setPdfTexts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const loadGoogleAPI = () => {
-      if (window.gapi) {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => {
         window.gapi.load('client:auth2', initClient);
-      } else {
-        console.error('Google API not loaded');
-        toast.error('Failed to load Google API. Please check your internet connection and try again.');
-      }
+      };
+      document.body.appendChild(script);
     };
 
     loadGoogleAPI();
+    return () => {
+      // Cleanup function to remove the script when component unmounts
+      const script = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
+      if (script) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   const initClient = () => {
+    if (!CLIENT_ID || !API_KEY) {
+      console.error('CLIENT_ID or API_KEY is missing');
+      toast.error('Google API credentials are missing. Please check your environment variables.');
+      return;
+    }
+
     window.gapi.client.init({
       apiKey: API_KEY,
       clientId: CLIENT_ID,
       discoveryDocs: DISCOVERY_DOCS,
       scope: SCOPES
     }).then(() => {
-      window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-      updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
-    }, (error) => {
+      const auth2 = window.gapi.auth2.getAuthInstance();
+      if (auth2) {
+        auth2.isSignedIn.listen(updateSigninStatus);
+        updateSigninStatus(auth2.isSignedIn.get());
+      } else {
+        console.error('Auth2 instance is null');
+        toast.error('Failed to initialize Google Auth. Please try refreshing the page.');
+      }
+      setIsInitialized(true);
+    }).catch((error) => {
       console.error('Error initializing Google API client', error);
       toast.error('Failed to initialize Google API client. Please check your credentials and try again.');
     });
@@ -46,16 +71,29 @@ const PDFHandler = ({ onPDFsProcessed }) => {
 
   const updateSigninStatus = (isSignedIn) => {
     setIsSignedIn(isSignedIn);
+    console.log('Sign-in status updated:', isSignedIn);
   };
 
   const handleAuthClick = () => {
+    if (!isInitialized) {
+      toast.error('Google API is not yet initialized. Please wait and try again.');
+      return;
+    }
+
+    const auth2 = window.gapi.auth2.getAuthInstance();
+    if (!auth2) {
+      console.error('Auth2 instance is null');
+      toast.error('Google Auth is not properly initialized. Please try refreshing the page.');
+      return;
+    }
+
     if (!isSignedIn) {
-      window.gapi.auth2.getAuthInstance().signIn().catch((error) => {
+      auth2.signIn().catch((error) => {
         console.error('Error signing in:', error);
         toast.error('Failed to sign in. Please try again.');
       });
     } else {
-      window.gapi.auth2.getAuthInstance().signOut().catch((error) => {
+      auth2.signOut().catch((error) => {
         console.error('Error signing out:', error);
         toast.error('Failed to sign out. Please try again.');
       });
@@ -63,6 +101,11 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const fetchPDFs = async () => {
+    if (!isInitialized) {
+      toast.error('Google API is not yet initialized. Please wait and try again.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await window.gapi.client.drive.files.list({
@@ -77,12 +120,14 @@ const PDFHandler = ({ onPDFsProcessed }) => {
         return;
       }
 
+      const newPdfTexts = {};
       for (let file of files) {
         const text = await fetchAndExtractText(file);
-        setPdfTexts(prev => ({ ...prev, [file.name]: text }));
+        newPdfTexts[file.name] = text;
       }
 
-      onPDFsProcessed(pdfTexts);
+      setPdfTexts(newPdfTexts);
+      onPDFsProcessed(newPdfTexts);
       toast.success('PDFs processed successfully');
     } catch (error) {
       console.error('Error fetching PDFs:', error);
@@ -113,11 +158,11 @@ const PDFHandler = ({ onPDFsProcessed }) => {
         <CardTitle>Google Drive PDF Integration</CardTitle>
       </CardHeader>
       <CardContent>
-        <Button onClick={handleAuthClick} className="mb-4">
+        <Button onClick={handleAuthClick} disabled={!isInitialized} className="mb-4">
           {isSignedIn ? 'Sign Out' : 'Sign In to Google Drive'}
         </Button>
         {isSignedIn && (
-          <Button onClick={fetchPDFs} disabled={isLoading}>
+          <Button onClick={fetchPDFs} disabled={isLoading || !isInitialized}>
             {isLoading ? 'Processing...' : 'Fetch and Process PDFs'}
           </Button>
         )}
