@@ -8,19 +8,35 @@ const Dashboard = ({ students, companies }) => {
     'Total Companies': companies.length,
     'Successful Matches': students.filter(s => s.outcome1 === 'Accepted' || s.outcome2 === 'Accepted').length,
     'Pending Matches': students.filter(s => s.outcome1 === 'Pending' || s.outcome2 === 'Pending').length,
-    'Average Match Accuracy': Math.round(students.reduce((acc, s) => acc + s.match1 + s.match2, 0) / (students.length * 2)),
+    'Average Match Accuracy': Math.round(students.reduce((acc, s) => acc + Math.max(s.match1, 0) + Math.max(s.match2, 0), 0) / (students.length * 2)),
   };
 
   const studentsVsCompanies = [
-    { name: 'Students', count: students.length },
-    { name: 'Companies', count: companies.length },
+    { name: 'Students', count: Math.max(students.length, 0) },
+    { name: 'Companies', count: Math.max(companies.length, 0) },
   ];
 
   const matchStatusData = [
-    { name: 'Successful Matches', value: stats['Successful Matches'], color: '#4CAF50' },
-    { name: 'Pending Matches', value: stats['Pending Matches'], color: '#FFC107' },
-    { name: 'Unmatched', value: students.length - stats['Successful Matches'] - stats['Pending Matches'], color: '#F44336' },
+    { name: 'Successful Matches', value: Math.max(stats['Successful Matches'], 0), color: '#4CAF50' },
+    { name: 'Pending Matches', value: Math.max(stats['Pending Matches'], 0), color: '#FFC107' },
+    { name: 'Unmatched', value: Math.max(students.length - stats['Successful Matches'] - stats['Pending Matches'], 0), color: '#F44336' },
   ];
+
+  const facultyData = students.reduce((acc, student) => {
+    acc[student.faculty] = (acc[student.faculty] || 0) + 1;
+    return acc;
+  }, {});
+
+  const facultyChartData = Object.entries(facultyData).map(([name, value]) => ({ name, value }));
+
+  const industryData = companies.reduce((acc, company) => {
+    acc[company.industry] = (acc[company.industry] || 0) + 1;
+    return acc;
+  }, {});
+
+  const industryChartData = Object.entries(industryData).map(([name, value]) => ({ name, value }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
   return (
     <div className="flex flex-col gap-6 p-6 bg-gray-100">
@@ -71,6 +87,58 @@ const Dashboard = ({ students, companies }) => {
                   ))}
                 </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Students by Faculty</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={facultyChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {facultyChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Companies by Industry</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={industryChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {industryChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
