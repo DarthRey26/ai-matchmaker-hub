@@ -14,8 +14,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 // 4. Add your production URL + "/oauth2callback" to "Authorized redirect URIs"
 // 5. Save the changes
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
+const API_KEY = process.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
@@ -26,6 +26,10 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    console.log('Environment variables:', {
+      CLIENT_ID,
+      API_KEY
+    });
     const loadGoogleAPI = () => {
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
@@ -47,6 +51,9 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   }, []);
 
   const initClient = () => {
+    console.log('CLIENT_ID:', CLIENT_ID); // Add this line
+    console.log('API_KEY:', API_KEY); // Add this line
+
     if (!CLIENT_ID || !API_KEY) {
       console.error('CLIENT_ID or API_KEY is missing');
       toast.error('Google API credentials are missing. Please check your environment variables.');
