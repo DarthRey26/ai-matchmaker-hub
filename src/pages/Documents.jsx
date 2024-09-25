@@ -3,23 +3,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import Sidebar from '../components/Sidebar';
 import PDFHandler from '../components/PDFHandler';
 
 const Documents = () => {
   const [studentDocuments, setStudentDocuments] = useState([]);
   const [companyDocuments, setCompanyDocuments] = useState([]);
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3001/documents')
-      .then(response => response.json())
-      .then(data => {
-        setStudentDocuments(data.studentDocuments);
-        setCompanyDocuments(data.companyDocuments);
-      })
-      .catch(error => console.error('Error fetching documents:', error));
+    fetchDocuments();
   }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/documents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      const data = await response.json();
+      setStudentDocuments(data.studentDocuments);
+      setCompanyDocuments(data.companyDocuments);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast.error('Failed to fetch documents. Please try again.');
+    }
+  };
 
   const renderDocumentTable = (documents, title, folder) => (
     <Card className="mt-8">
@@ -39,7 +49,8 @@ const Documents = () => {
               <TableRow key={index}>
                 <TableCell>{doc}</TableCell>
                 <TableCell>
-                  <Button variant="outline" onClick={() => handleViewDocument(folder, doc)}>View Content</Button>
+                  <Button variant="outline" onClick={() => handleViewDocument(folder, doc)}>View</Button>
+                  <Button variant="outline" className="ml-2" onClick={() => handleDeleteDocument(folder, doc)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -53,46 +64,55 @@ const Documents = () => {
     window.open(`http://localhost:3001/view/${folder}/${filename}`, '_blank');
   };
 
-  const handleFileUpload = (event, folder) => {
+  const handleFileUpload = async (event, folder) => {
     const file = event.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', folder);
 
-    fetch('http://localhost:3001/upload', {
-      method: 'POST',
-      body: formData,
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data.message);
-        // Refresh the document list
-        fetch('http://localhost:3001/documents')
-          .then(response => response.json())
-          .then(data => {
-            setStudentDocuments(data.studentDocuments);
-            setCompanyDocuments(data.companyDocuments);
-          });
-      })
-      .catch(error => console.error('Error uploading file:', error));
+    try {
+      const response = await fetch('http://localhost:3001/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      console.log(data.message);
+      toast.success('File uploaded successfully');
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload file. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleDeleteDocument = (folder, filename) => {
-    fetch(`http://localhost:3001/delete/${folder}/${filename}`, {
-      method: 'DELETE',
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data.message);
-        // Refresh the document list
-        fetch('http://localhost:3001/documents')
-          .then(response => response.json())
-          .then(data => {
-            setStudentDocuments(data.studentDocuments);
-            setCompanyDocuments(data.companyDocuments);
-          });
-      })
-      .catch(error => console.error('Error deleting file:', error));
+  const handleDeleteDocument = async (folder, filename) => {
+    try {
+      const response = await fetch(`http://localhost:3001/delete/${folder}/${filename}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Delete failed');
+      }
+
+      const data = await response.json();
+      console.log(data.message);
+      toast.success('File deleted successfully');
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('Failed to delete file. Please try again.');
+    }
   };
 
   return (
@@ -105,12 +125,34 @@ const Documents = () => {
             <h2 className="text-2xl font-bold mb-4">Upload Documents</h2>
             <div className="flex space-x-4">
               <div>
-                <label htmlFor="studentUpload" className="btn btn-primary">Upload Student Document</label>
-                <input id="studentUpload" type="file" className="hidden" onChange={(e) => handleFileUpload(e, 'students')} />
+                <input
+                  id="studentUpload"
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'students')}
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="studentUpload"
+                  className={`btn btn-primary ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload Student Document'}
+                </label>
               </div>
               <div>
-                <label htmlFor="companyUpload" className="btn btn-primary">Upload Company Document</label>
-                <input id="companyUpload" type="file" className="hidden" onChange={(e) => handleFileUpload(e, 'companies')} />
+                <input
+                  id="companyUpload"
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'companies')}
+                  disabled={isUploading}
+                />
+                <label
+                  htmlFor="companyUpload"
+                  className={`btn btn-primary ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload Company Document'}
+                </label>
               </div>
             </div>
           </div>
