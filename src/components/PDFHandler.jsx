@@ -3,16 +3,9 @@ import * as pdfjs from 'pdfjs-dist';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { extractInformation } from '../utils/resumeParser';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-// Important: Add your production URL to the Google Cloud Console
-// In your Google Cloud Console:
-// 1. Go to APIs & Services > Credentials
-// 2. Edit your OAuth 2.0 Client ID
-// 3. Add your production URL to "Authorized JavaScript origins"
-// 4. Add your production URL + "/oauth2callback" to "Authorized redirect URIs"
-// 5. Save the changes
 
 const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = process.env.VITE_GOOGLE_API_KEY;
@@ -24,6 +17,8 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [pdfTexts, setPdfTexts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [parsedResumes, setParsedResumes] = useState([]);
+  const [parsedCompanyDocs, setParsedCompanyDocs] = useState([]);
 
   useEffect(() => {
     console.log('Environment variables:', {
@@ -121,29 +116,40 @@ const PDFHandler = ({ onPDFsProcessed }) => {
     setIsLoading(true);
     try {
       const response = await window.gapi.client.drive.files.list({
-        q: "mimeType='application/pdf' and name contains 'IRIS'",
+        q: "mimeType='application/pdf'",
         fields: 'files(id, name, webContentLink)'
       });
 
       const files = response.result.files;
       if (files.length === 0) {
-        toast.error('No PDFs found in the IRIS folder');
+        toast.error('No PDFs found');
         setIsLoading(false);
         return;
       }
 
-      const newPdfTexts = {};
+      const newPdfTexts = [];
+      const newParsedResumes = [];
+      const newParsedCompanyDocs = [];
+
       for (let file of files) {
         const text = await fetchAndExtractText(file);
-        newPdfTexts[file.name] = text;
+        newPdfTexts.push(text);
+        const parsedInfo = extractInformation(text);
+        if (parsedInfo.isStudent) {
+          newParsedResumes.push({ name: file.name, info: parsedInfo });
+        } else {
+          newParsedCompanyDocs.push({ name: file.name, info: parsedInfo });
+        }
       }
 
       setPdfTexts(newPdfTexts);
-      onPDFsProcessed(newPdfTexts);
-      toast.success('PDFs processed successfully');
+      setParsedResumes(newParsedResumes);
+      setParsedCompanyDocs(newParsedCompanyDocs);
+      onPDFsProcessed(newParsedResumes, newParsedCompanyDocs, newPdfTexts);
+      toast.success('PDFs processed and parsed successfully');
     } catch (error) {
       console.error('Error fetching PDFs:', error);
-      toast.error('Failed to fetch PDFs from Google Drive. Please check your permissions and try again.');
+      toast.error('Failed to fetch or parse PDFs. Please check your permissions and try again.');
     }
     setIsLoading(false);
   };
@@ -178,9 +184,23 @@ const PDFHandler = ({ onPDFsProcessed }) => {
             {isLoading ? 'Processing...' : 'Fetch and Process PDFs'}
           </Button>
         )}
+        {(parsedResumes.length > 0 || parsedCompanyDocs.length > 0) && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold">Processed Documents:</h3>
+            <ul>
+              {parsedResumes.map((resume, index) => (
+                <li key={`student-${index}`}>{resume.name} (Student)</li>
+              ))}
+              {parsedCompanyDocs.map((doc, index) => (
+                <li key={`company-${index}`}>{doc.name} (Company)</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
+
 
 export default PDFHandler;

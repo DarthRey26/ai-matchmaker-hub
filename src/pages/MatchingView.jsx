@@ -9,22 +9,12 @@ import Sidebar from '../components/Sidebar';
 const MatchingView = () => {
   const [companies, setCompanies] = useState(() => {
     const savedCompanies = localStorage.getItem('companies');
-    return savedCompanies ? JSON.parse(savedCompanies) : [
-      { name: 'KC Partnership', summary: 'A leading law firm specializing in corporate law and mergers & acquisitions.', slots: 2 },
-      { name: 'Watson Farley & Williams', summary: 'An international law firm focusing on energy, maritime, and infrastructure sectors.', slots: 2 },
-      { name: 'Mazars', summary: 'A global audit, tax, and advisory firm helping organizations navigate business complexities.', slots: 2 },
-      { name: 'Forvia', summary: 'An automotive technology company developing innovative solutions for future mobility.', slots: 2 },
-      { name: 'The Chosen One Agency', summary: 'A creative marketing agency known for its cutting-edge digital campaigns.', slots: 2 },
-    ];
+    return savedCompanies ? JSON.parse(savedCompanies) : [];
   });
 
   const [students, setStudents] = useState(() => {
     const savedStudents = localStorage.getItem('students');
-    return savedStudents ? JSON.parse(savedStudents) : [
-      { id: 1, name: 'Adarius', school: 'Temasek Poly', faculty: 'Law', company1: 'KC Partnership', outcome1: 'Pending', company2: 'Watson Farley & Williams', outcome2: 'Pending', backupCompany: '', match1: 85, match2: 92 },
-      { id: 2, name: 'Nicole', school: 'Temasek Poly', faculty: 'Law', company1: 'KC Partnership', outcome1: 'Pending', company2: 'Watson Farley & Williams', outcome2: 'Pending', backupCompany: '', match1: 88, match2: 90 },
-      { id: 3, name: 'Aidan', school: 'Temasek Poly', faculty: 'Law', company1: 'Watson Farley & Williams', outcome1: 'Pending', company2: 'KC Partnership', outcome2: 'Pending', backupCompany: '', match1: 91, match2: 87 },
-    ];
+    return savedStudents ? JSON.parse(savedStudents) : [];
   });
 
   useEffect(() => {

@@ -1,22 +1,22 @@
-export const generateCSV = (students) => {
-  const headers = ['Name', 'School', 'Faculty', 'Company 1', '1st Outcome', 'Company 2', '2nd Outcome', 'Backup Company'];
-  const rows = students.map(student => [
-    student.name,
-    student.school,
-    student.faculty,
-    student.company1,
-    student.outcome1,
-    student.company2,
-    student.outcome2,
-    student.backupCompany || 'None'
-  ]);
-
-  const csvContent = [
+export const generateCSV = (data) => {
+  if (data.length === 0) return '';
+  
+  const headers = Object.keys(data[0]).filter(key => key !== 'filename');
+  const rows = data.map(item => 
+    headers.map(header => {
+      if (Array.isArray(item[header])) {
+        return item[header].join(';');
+      } else if (typeof item[header] === 'object' && item[header] !== null) {
+        return JSON.stringify(item[header]);
+      }
+      return item[header];
+    })
+  );
+  
+  return [
     headers.join(','),
     ...rows.map(row => row.join(','))
   ].join('\n');
-
-  return csvContent;
 };
 
 export const downloadCSV = (csvContent, filename) => {

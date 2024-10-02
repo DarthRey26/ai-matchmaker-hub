@@ -1,7 +1,8 @@
-import { HomeIcon, UsersIcon, FileTextIcon } from "lucide-react";
+import { FileTextIcon, HomeIcon, UsersIcon, FileIcon } from "lucide-react";
 import Index from "./pages/Index.jsx";
 import MatchingView from "./pages/MatchingView.jsx";
 import Documents from "./pages/Documents.jsx";
+import ExtractedText from "./pages/ExtractedText.jsx";
 
 export const navItems = [
   {
@@ -21,5 +22,11 @@ export const navItems = [
     to: "/documents",
     icon: <FileTextIcon className="h-4 w-4" />,
     page: <Documents />,
+  },
+  {
+    title: "Extracted Text",
+    to: "/extracted-text",
+    icon: <FileIcon className="h-4 w-4" />,
+    page: <ExtractedText />,
   },
 ];

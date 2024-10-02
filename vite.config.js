@@ -26,6 +26,10 @@ export default defineConfig(({ mode }) => {
           find: "lib",
           replacement: resolve(__dirname, "lib"),
         },
+        {
+          find: 'axios',
+          replacement: resolve(__dirname, 'node_modules/axios'),
+        },
       ],
     },
   };
