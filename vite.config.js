@@ -30,7 +30,17 @@ export default defineConfig(({ mode }) => {
           find: 'axios',
           replacement: resolve(__dirname, 'node_modules/axios'),
         },
+        {
+          find: 'pdfjs-dist',
+          replacement: resolve(__dirname, 'node_modules/pdfjs-dist/build/pdf'),
+        },
       ],
+      alias: {
+        'pdfjs-dist': resolve(__dirname, 'node_modules/pdfjs-dist/legacy/build/pdf.js'),
+      },
+    },
+    optimizeDeps: {
+      include: ['pdfjs-dist/build/pdf.worker.js'],
     },
   };
 });
