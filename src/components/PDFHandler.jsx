@@ -155,19 +155,13 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const fetchAndExtractText = async (file) => {
-    const response = await fetch(file.webContentLink);
-    const arrayBuffer = await response.arrayBuffer();
-    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-    let fullText = '';
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\n';
+    try {
+      const extractedInfo = await extractInformation(file.webContentLink);
+      return extractedInfo;
+    } catch (error) {
+      console.error('Error extracting information from PDF:', error);
+      return null;
     }
-
-    return fullText;
   };
 
   return (
