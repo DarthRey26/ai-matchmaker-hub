@@ -3,6 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { extractInformation } from '../utils/resumeParser';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -16,6 +17,8 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [pdfTexts, setPdfTexts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [parsedResumes, setParsedResumes] = useState([]);
+  const [parsedCompanyDocs, setParsedCompanyDocs] = useState([]);
 
   useEffect(() => {
     console.log('Environment variables:', {
@@ -152,7 +155,19 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const fetchAndExtractText = async (file) => {
-    return file.webContentLink;
+    const response = await fetch(file.webContentLink);
+    const arrayBuffer = await response.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText;
   };
 
   return (
