@@ -3,7 +3,6 @@ import * as pdfjs from 'pdfjs-dist';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { extractInformation } from '../utils/resumeParser';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -17,8 +16,6 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   const [pdfTexts, setPdfTexts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [parsedResumes, setParsedResumes] = useState([]);
-  const [parsedCompanyDocs, setParsedCompanyDocs] = useState([]);
 
   useEffect(() => {
     console.log('Environment variables:', {
@@ -155,13 +152,7 @@ const PDFHandler = ({ onPDFsProcessed }) => {
   };
 
   const fetchAndExtractText = async (file) => {
-    try {
-      const extractedInfo = await extractInformation(file.webContentLink);
-      return extractedInfo;
-    } catch (error) {
-      console.error('Error extracting information from PDF:', error);
-      return null;
-    }
+    return file.webContentLink;
   };
 
   return (
