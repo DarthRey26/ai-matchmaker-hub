@@ -4,49 +4,20 @@ import Sidebar from '../components/Sidebar';
 import PDFHandler from '../components/PDFHandler';
 
 const Index = () => {
-  const [students, setStudents] = useState([]);
-  const [companies, setCompanies] = useState([]);
+  const [matchingResults, setMatchingResults] = useState([]);
 
   useEffect(() => {
-    const savedStudents = localStorage.getItem('students');
-    const savedCompanies = localStorage.getItem('companies');
-    
-    if (savedStudents) {
-      setStudents(JSON.parse(savedStudents));
-    }
-    
-    if (savedCompanies) {
-      setCompanies(JSON.parse(savedCompanies));
-    }
+    fetchMatchingResults();
   }, []);
 
-  const handlePDFsProcessed = (parsedResumes, parsedCompanyDocs) => {
-    const newStudents = parsedResumes.map((resume, index) => ({
-      id: index + 1,
-      name: resume.info.name,
-      school: resume.info.school,
-      faculty: resume.info.faculty,
-      company1: '',
-      outcome1: 'Pending',
-      company2: '',
-      outcome2: 'Pending',
-      backupCompany: '',
-      match1: 0,
-      match2: 0 
-    }));
-
-    const newCompanies = parsedCompanyDocs.map(doc => ({
-      name: doc.info.name,
-      summary: doc.info.description,
-      slots: 2,
-      industry: doc.info.industry,
-      jobDescription: doc.info.jobDescription
-    }));
-
-    setStudents(newStudents);
-    setCompanies(newCompanies);
-    localStorage.setItem('students', JSON.stringify(newStudents));
-    localStorage.setItem('companies', JSON.stringify(newCompanies));
+  const fetchMatchingResults = async () => {
+    try {
+      const response = await fetch('/api/process-and-match');
+      const data = await response.json();
+      setMatchingResults(data);
+    } catch (error) {
+      console.error('Error fetching matching results:', error);
+    }
   };
 
   return (
@@ -54,7 +25,26 @@ const Index = () => {
       <Sidebar />
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto py-8">
-          <Dashboard students={students} companies={companies} />
+          <Dashboard />
+          <h1>Student-Company Matching Results</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Company Name</th>
+                <th>Match Probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matchingResults.map((result, index) => (
+                <tr key={index}>
+                  <td>{result['Student Name']}</td>
+                  <td>{result['Company Name']}</td>
+                  <td>{result['Match Probability']}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

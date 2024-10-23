@@ -1,52 +1,20 @@
-import * as pdfjs from "pdfjs-dist";
-// @ts-ignore
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+import { extractTextFromPDF, extractStudentData, extractCompanyData } from './dataExtractor';
 
-import type { TextItem as PdfjsTextItem } from "pdfjs-dist/types/src/display/api";
-import type { TextItem, TextItems } from "./types";
-
-export const readPdf = async (fileUrl: string): Promise<TextItems> => {
-  const pdfFile = await pdfjs.getDocument(fileUrl).promise;
-  let textItems: TextItems = [];
-
-  for (let i = 1; i <= pdfFile.numPages; i++) {
-    const page = await pdfFile.getPage(i);
-    const textContent = await page.getTextContent();
-    await page.getOperatorList();
-    const commonObjs = page.commonObjs;
-
-    const pageTextItems = textContent.items.map((item) => {
-      const {
-        str: text,
-        dir,
-        transform,
-        fontName: pdfFontName,
-        ...otherProps
-      } = item as PdfjsTextItem;
-
-      const x = transform[4];
-      const y = transform[5];
-      const fontObj = commonObjs.get(pdfFontName);
-      const fontName = fontObj.name;
-      const newText = text.replace(/-­‐/g, "-");
-
-      const newItem = {
-        ...otherProps,
-        fontName,
-        text: newText,
-        x,
-        y,
-      };
-      return newItem;
-    });
-
-    textItems.push(...pageTextItems);
+export async function processPDF(file: File): Promise<any> {
+  const text = await extractTextFromPDF(file);
+  
+  if (file.name.toLowerCase().includes('student')) {
+    return extractStudentData(text);
+  } else if (file.name.toLowerCase().includes('company')) {
+    return extractCompanyData(text);
+  } else {
+    throw new Error('Unknown PDF type');
   }
+}
 
-  const isEmptySpace = (textItem: TextItem) =>
-    !textItem.hasEOL && textItem.text.trim() === "";
-  textItems = textItems.filter((textItem) => !isEmptySpace(textItem));
-
-  return textItems;
+export async function processMultiplePDFs(files: FileList): Promise<any[]> {
+  const processedData = await Promise.all(
+    Array.from(files).map(file => processPDF(file))
+  );
+  return processedData;
 }

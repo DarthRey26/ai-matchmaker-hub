@@ -1,5 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DB_FILE = path.join(__dirname, 'documents.json');
 
@@ -17,7 +21,7 @@ function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-function addDocument(type, filename) {
+export function addDocument(type, filename) {
   const db = readDB();
   if (type === 'student' || type === 'company') {
     const key = type === 'student' ? 'students' : 'companies';
@@ -30,7 +34,7 @@ function addDocument(type, filename) {
   }
 }
 
-function removeDocument(type, filename) {
+export function removeDocument(type, filename) {
   const db = readDB();
   if (type === 'student' || type === 'company') {
     const key = type === 'student' ? 'students' : 'companies';
@@ -41,15 +45,8 @@ function removeDocument(type, filename) {
   }
 }
 
-function getAllDocuments() {
+export function getAllDocuments() {
   const data = readDB();
   console.log('All documents:', JSON.stringify(data, null, 2));
   return data;
 }
-
-module.exports = {
-  addDocument,
-  removeDocument,
-  getAllDocuments
-};
-

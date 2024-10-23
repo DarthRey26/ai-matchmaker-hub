@@ -1,22 +1,18 @@
 export const generateCSV = (data) => {
-  if (data.length === 0) return '';
-  
-  const headers = Object.keys(data[0]).filter(key => key !== 'filename');
-  const rows = data.map(item => 
-    headers.map(header => {
-      if (Array.isArray(item[header])) {
-        return item[header].join(';');
-      } else if (typeof item[header] === 'object' && item[header] !== null) {
-        return JSON.stringify(item[header]);
-      }
-      return item[header];
-    })
-  );
-  
-  return [
+  const headers = ['Student Name', 'Company 1', 'Probability 1', 'Company 2', 'Probability 2', 'Company 3', 'Probability 3'];
+  const csvRows = [
     headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
+    ...data.map(student => [
+      student.name,
+      student.matches[0].company,
+      (student.matches[0].probability * 100).toFixed(2) + '%',
+      student.matches[1].company,
+      (student.matches[1].probability * 100).toFixed(2) + '%',
+      student.matches[2].company,
+      (student.matches[2].probability * 100).toFixed(2) + '%'
+    ].join(','))
+  ];
+  return csvRows.join('\n');
 };
 
 export const downloadCSV = (csvContent, filename) => {
@@ -31,4 +27,22 @@ export const downloadCSV = (csvContent, filename) => {
     link.click();
     document.body.removeChild(link);
   }
+};
+
+export const generateCompanyDataCSV = (data) => {
+  const headers = ['Company Name', 'Website', 'Number of Students', 'Monthly Allowance', 'Working Days', 'Company Description', 'Job Roles', 'Requirements'];
+  const csvRows = [
+    headers.join(','),
+    ...data.map(company => [
+      company.company_name,
+      company.website,
+      company.num_students,
+      company.monthly_allowance,
+      company.working_days,
+      `"${company.company_description.replace(/"/g, '""')}"`,
+      `"${company.job_roles.join('; ').replace(/"/g, '""')}"`,
+      `"${company.requirements.join('; ').replace(/"/g, '""')}"`
+    ].join(','))
+  ];
+  return csvRows.join('\n');
 };

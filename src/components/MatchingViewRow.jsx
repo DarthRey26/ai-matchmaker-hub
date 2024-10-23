@@ -1,60 +1,18 @@
 import React from 'react';
-import { TableCell, TableRow } from '@/components/ui/table';
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CompanyCell } from './CompanyCell';
-import { OutcomeCell } from './OutcomeCell';
-import { DetailDialog } from './DetailDialog';
+import { TableCell, TableRow } from "@/components/ui/table";
 
-export const MatchingViewRow = ({ student, companies, onOutcomeChange, onReassign, onBackupCompanyChange }) => {
+const MatchingViewRow = ({ match }) => {
   return (
     <TableRow>
-      <TableCell>{student.name}</TableCell>
-      <TableCell>{student.school}</TableCell>
-      <TableCell>{student.faculty}</TableCell>
-      <CompanyCell
-        student={student}
-        companyField="company1"
-        companies={companies.map(c => c.name)}
-        onReassign={onReassign}
-      />
-      <OutcomeCell
-        student={student}
-        outcomeField="outcome1"
-        onOutcomeChange={onOutcomeChange}
-      />
-      <CompanyCell
-        student={student}
-        companyField="company2"
-        companies={companies.map(c => c.name)}
-        onReassign={onReassign}
-        disabled={student.outcome1 === 'Accepted'}
-      />
-      <OutcomeCell
-        student={student}
-        outcomeField="outcome2"
-        onOutcomeChange={onOutcomeChange}
-        disabled={student.outcome1 === 'Accepted'}
-      />
-      <TableCell>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline">{student.backupCompany || 'None'}</Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Backup Company</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </TableCell>
-      <TableCell>
-        <DetailDialog 
-          student={student} 
-          companies={companies}
-          onBackupCompanyChange={onBackupCompanyChange}
-        />
-      </TableCell>
+      <TableCell>{match.student}</TableCell>
+      <TableCell>{match.matches[0].company}</TableCell>
+      <TableCell>{(match.matches[0].probability * 100).toFixed(2)}%</TableCell>
+      <TableCell>{match.matches[1].company}</TableCell>
+      <TableCell>{(match.matches[1].probability * 100).toFixed(2)}%</TableCell>
+      <TableCell>{match.matches[2].company}</TableCell>
+      <TableCell>{(match.matches[2].probability * 100).toFixed(2)}%</TableCell>
     </TableRow>
   );
 };
+
+export default MatchingViewRow;

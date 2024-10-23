@@ -1,13 +1,22 @@
-const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const fs = require('fs/promises');
-const path = require('path');
-const { Worker } = require('worker_threads');
-const { addDocument, removeDocument, getAllDocuments } = require('./db');
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
+import fs from 'fs/promises';
+import path from 'path';
+import { Worker } from 'worker_threads';
+import { addDocument, removeDocument, getAllDocuments } from './db.js';
+import { fileURLToPath } from 'url';
+import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
+import { matchStudentsToCompanies } from '../src/utils/matchingAlgorithm.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:8081', // Update this to match your frontend URL
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -139,6 +148,63 @@ app.get('/extracted-texts', async (req, res) => {
   } catch (error) {
     console.error('Error in /extracted-texts route:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/matching-data', async (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const studentDir = path.join(uploadsDir, 'students');
+    const companyDir = path.join(uploadsDir, 'companies');
+
+    console.log('Processing resumes...');
+    const studentData = await processResumes(studentDir);
+    console.log('Student data:', JSON.stringify(studentData, null, 2));
+
+    console.log('Processing company data...');
+    const companyData = await processCompanyPDFs(companyDir);
+    console.log('Company data:', JSON.stringify(companyData, null, 2));
+
+    console.log('Matching students to companies...');
+    const matchingResults = matchStudentsToCompanies(studentData, companyData);
+    console.log('Matching results:', JSON.stringify(matchingResults, null, 2));
+
+    if (!matchingResults || matchingResults.length === 0) {
+      return res.status(404).json({ error: 'No matching results found' });
+    }
+
+    const formattedResults = matchingResults.flatMap(result => 
+      result.matches.map(match => ({
+        "Student Name": result.name,
+        "Company Name": match.company,
+        "Match Probability": `${(match.probability * 100).toFixed(2)}%`
+      }))
+    );
+
+    res.json(formattedResults);
+  } catch (error) {
+    console.error('Error processing and matching:', error);
+    res.status(500).json({ error: error.message || 'Failed to process and match data' });
+  }
+});
+
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working' });
+});
+
+app.get('/api/company-data', async (req, res) => {
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const companyDir = path.join(uploadsDir, 'companies');
+
+    console.log('Processing company data...');
+    const companyData = await processCompanyPDFs(companyDir);
+    console.log('Company data:', JSON.stringify(companyData, null, 2));
+
+    res.json(companyData);
+  } catch (error) {
+    console.error('Error processing company data:', error);
+    res.status(500).json({ error: error.message || 'Failed to process company data' });
   }
 });
 

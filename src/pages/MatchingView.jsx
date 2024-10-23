@@ -1,61 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MatchingViewRow } from '../components/MatchingViewRow';
-import { generateCSV, downloadCSV } from '../utils/csvUtils';
 import Sidebar from '../components/Sidebar';
+import { generateCSV, downloadCSV, generateCompanyDataCSV } from '../utils/csvUtils';
 
 const MatchingView = () => {
-  const [companies, setCompanies] = useState(() => {
-    const savedCompanies = localStorage.getItem('companies');
-    return savedCompanies ? JSON.parse(savedCompanies) : [];
-  });
+  const [matchingData, setMatchingData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [students, setStudents] = useState(() => {
-    const savedStudents = localStorage.getItem('students');
-    return savedStudents ? JSON.parse(savedStudents) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('students', JSON.stringify(students));
-    localStorage.setItem('companies', JSON.stringify(companies));
-  }, [students, companies]);
-
-  const handleOutcomeChange = (studentId, companyField, newOutcome) => {
-    setStudents(students.map(student => {
-      if (student.id === studentId) {
-        return { ...student, [`outcome${companyField.slice(-1)}`]: newOutcome };
+  const fetchMatchingData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3001/api/matching-data');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return student;
-    }));
-  };
-
-  const handleReassign = (studentId, companyField, newCompany) => {
-    setStudents(students.map(student => {
-      if (student.id === studentId) {
-        return { 
-          ...student, 
-          [companyField]: newCompany, 
-          [`match${companyField.slice(-1)}`]: Math.floor(Math.random() * 20) + 80
-        };
-      }
-      return student;
-    }));
-  };
-
-  const handleBackupCompanyChange = (studentId, newBackupCompany) => {
-    setStudents(students.map(student => {
-      if (student.id === studentId) {
-        return { ...student, backupCompany: newBackupCompany };
-      }
-      return student;
-    }));
+      const data = await response.json();
+      setMatchingData(data);
+    } catch (error) {
+      console.error('Error fetching matching data:', error);
+      setError(`Failed to fetch matching data: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownloadCSV = () => {
-    const csvContent = generateCSV(students);
-    downloadCSV(csvContent, 'student_company_matching.csv');
+    const csv = generateCSV(matchingData);
+    downloadCSV(csv, 'student_company_matching.csv');
+  };
+
+  const handleDownloadCompanyData = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/company-data');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const csv = generateCompanyDataCSV(data);
+      downloadCSV(csv, 'company_data.csv');
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+      setError(`Failed to fetch company data: ${error.message}`);
+    }
   };
 
   return (
@@ -66,36 +56,49 @@ const MatchingView = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-2xl font-bold">Student-Company Matching</CardTitle>
-              <Button onClick={handleDownloadCSV}>Download CSV</Button>
+              <div>
+                <Button onClick={fetchMatchingData} disabled={isLoading} className="mr-2">
+                  {isLoading ? 'Processing...' : 'Start Matching'}
+                </Button>
+                <Button onClick={handleDownloadCSV} disabled={isLoading || matchingData.length === 0}>
+                  Download CSV
+                </Button>
+                <Button onClick={handleDownloadCompanyData} className="ml-2">
+                  Download Company Data
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>School</TableHead>
-                    <TableHead>Faculty</TableHead>
-                    <TableHead>Company 1</TableHead>
-                    <TableHead>1st Outcome</TableHead>
-                    <TableHead>Company 2</TableHead>
-                    <TableHead>2nd Outcome</TableHead>
-                    <TableHead>Backup Company</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {students.map((student) => (
-                    <MatchingViewRow
-                      key={student.id}
-                      student={student}
-                      companies={companies}
-                      onOutcomeChange={handleOutcomeChange}
-                      onReassign={handleReassign}
-                      onBackupCompanyChange={handleBackupCompanyChange}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+              {isLoading && <div className="text-center py-4">Processing matches... Please wait.</div>}
+              {error && <div className="text-red-500 text-center py-4">{error}</div>}
+              {!isLoading && !error && matchingData.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Company 1</TableHead>
+                      <TableHead>Probability 1</TableHead>
+                      <TableHead>Company 2</TableHead>
+                      <TableHead>Probability 2</TableHead>
+                      <TableHead>Company 3</TableHead>
+                      <TableHead>Probability 3</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {matchingData.map((student, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{student.name}</TableCell>
+                        <TableCell>{student.matches[0].company}</TableCell>
+                        <TableCell>{`${(student.matches[0].probability * 100).toFixed(2)}%`}</TableCell>
+                        <TableCell>{student.matches[1].company}</TableCell>
+                        <TableCell>{`${(student.matches[1].probability * 100).toFixed(2)}%`}</TableCell>
+                        <TableCell>{student.matches[2].company}</TableCell>
+                        <TableCell>{`${(student.matches[2].probability * 100).toFixed(2)}%`}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
