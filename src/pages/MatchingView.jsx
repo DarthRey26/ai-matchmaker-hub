@@ -16,13 +16,12 @@ const MatchingView = () => {
     try {
       const response = await fetch('http://localhost:3001/api/matching-data');
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to fetch matching data');
       }
       const data = await response.json();
       setMatchingData(data);
-    } catch (error) {
-      console.error('Error fetching matching data:', error);
-      setError(`Failed to fetch matching data: ${error.message}`);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -87,13 +86,13 @@ const MatchingView = () => {
                   <TableBody>
                     {matchingData.map((student, index) => (
                       <TableRow key={index}>
-                        <TableCell>{student.name}</TableCell>
-                        <TableCell>{student.matches[0].company}</TableCell>
-                        <TableCell>{`${(student.matches[0].probability * 100).toFixed(2)}%`}</TableCell>
-                        <TableCell>{student.matches[1].company}</TableCell>
-                        <TableCell>{`${(student.matches[1].probability * 100).toFixed(2)}%`}</TableCell>
-                        <TableCell>{student.matches[2].company}</TableCell>
-                        <TableCell>{`${(student.matches[2].probability * 100).toFixed(2)}%`}</TableCell>
+                        <TableCell>{student.studentName}</TableCell>
+                        {student.matches.map((match, idx) => (
+                          <React.Fragment key={idx}>
+                            <TableCell>{match.companyName}</TableCell>
+                            <TableCell>{match.probability}</TableCell>
+                          </React.Fragment>
+                        ))}
                       </TableRow>
                     ))}
                   </TableBody>

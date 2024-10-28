@@ -4,39 +4,91 @@ const TfIdf = natural.TfIdf;
 const tokenizer = new natural.WordTokenizer();
 
 export function matchStudentsToCompanies(students, companies) {
-  const cleanText = (text) => {
-    if (typeof text === 'string') {
-      return text.replace(/[^a-zA-Z\s]/g, '').toLowerCase().trim();
-    }
-    return '';
-  };
+  if (!Array.isArray(students) || !Array.isArray(companies)) {
+    console.error('Invalid input arrays');
+    return [];
+  }
 
   const tfidf = new TfIdf();
 
-  students.forEach(student => {
-    const studentProfile = `${student.education} ${student.experience} ${student.skills}`.toLowerCase();
-    tfidf.addDocument(tokenizer.tokenize(studentProfile));
-  });
-
-  companies.forEach(company => {
-    const companyProfile = `${company.job_description} ${company.company_name}`.toLowerCase();
-    tfidf.addDocument(tokenizer.tokenize(companyProfile));
-  });
-
-  return students.map(student => {
-    const studentVector = tfidf.tfidf(tokenizer.tokenize(`${student.education} ${student.experience} ${student.skills}`.toLowerCase()), 0);
-    const matches = companies.map(company => {
-      const companyVector = tfidf.tfidf(tokenizer.tokenize(`${company.job_description} ${company.company_name}`.toLowerCase()), 0);
-      const similarity = cosineSimilarity(studentVector, companyVector);
+  // Process students
+  const processedStudents = students
+    .filter(student => student && typeof student === 'object')
+    .map(student => {
+      // Weight different sections differently
+      const text = [
+        (student?.education || '').repeat(2),  // Double weight for education
+        student?.skills?.join(' ') || '',
+        (student?.experience?.map(exp => exp.job_titles?.join(' ')).join(' ') || ''),
+        student?.keywords?.join(' ') || ''
+      ].join(' ').toLowerCase();
+      
+      const tokens = tokenizer.tokenize(text);
+      tfidf.addDocument(tokens);
+      
       return {
-        company: company.company_name,
-        probability: parseFloat((similarity * 0.5 + 0.5).toFixed(2))
+        name: student?.name?.replace(/^\d+-/, '') || 'Unknown Student', // Remove timestamp prefix
+        docIndex: tfidf.documents.length - 1,
+        tokens
       };
+    });
+
+  // Process companies
+  const processedCompanies = companies
+    .filter(company => company && typeof company === 'object')
+    .map(company => {
+      // Weight job descriptions and requirements more heavily
+      const jobInfo = company?.job_descriptions ? 
+        company.job_descriptions.join(' ').repeat(3) : ''; // Triple weight for job descriptions
+      
+      const text = [
+        company?.company_name || '',
+        (company?.company_description || '').repeat(2), // Double weight for company description
+        jobInfo,
+        company?.number_of_students?.map(s => s.position).join(' ') || ''
+      ].join(' ').toLowerCase();
+      
+      const tokens = tokenizer.tokenize(text);
+      tfidf.addDocument(tokens);
+      
+      return {
+        name: company?.company_name || 'Unknown Company',
+        docIndex: tfidf.documents.length - 1,
+        tokens
+      };
+    });
+
+  // Calculate matches with normalized probabilities
+  return processedStudents.map(student => {
+    const matches = processedCompanies
+      .map(company => {
+        let similarity = 0;
+        const allTerms = new Set([...student.tokens, ...company.tokens]);
+        
+        allTerms.forEach(term => {
+          const studentScore = tfidf.tfidf(term, student.docIndex) || 0;
+          const companyScore = tfidf.tfidf(term, company.docIndex) || 0;
+          similarity += studentScore * companyScore;
+        });
+
+        return {
+          company: company.name,
+          probability: similarity
+        };
+      })
+      .sort((a, b) => b.probability - a.probability)
+      .slice(0, 3);
+
+    // Normalize probabilities to percentages
+    const maxProb = Math.max(...matches.map(m => m.probability));
+    matches.forEach(match => {
+      match.probability = match.probability > 0 ? 
+        (match.probability / maxProb) * 100 : 0.01;
     });
 
     return {
       name: student.name,
-      matches: matches.sort((a, b) => b.probability - a.probability).slice(0, 3)
+      matches
     };
   });
 }

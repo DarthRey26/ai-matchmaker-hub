@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import * as path from 'path';
+import path from 'path';
 import { fileURLToPath } from 'url';
 import nlp from 'compromise';
 import natural from 'natural';
@@ -111,36 +111,159 @@ export async function processResumes(directory) {
 }
 
 export async function processCompanyPDFs(directory) {
+  try {
     const files = fs.readdirSync(directory);
-    const companyData = [];
-    for (const file of files) {
-        if (path.extname(file).toLowerCase() === '.pdf') {
-            const filePath = path.join(directory, file);
-            const text = await extractTextFromPDF(filePath);
-            const data = extractDataFromText(text);
-            companyData.push(data);
-        }
+    const supportedFiles = files.filter(file => 
+      file.toLowerCase().endsWith('.pdf') || 
+      file.toLowerCase().endsWith('.txt')
+    );
+    
+    const allCompanies = [];
+    
+    for (const file of supportedFiles) {
+      const filePath = path.join(directory, file);
+      const text = await extractTextFromPDF(filePath);
+      const companyInfo = extractCompanyInfo(text, file);
+      allCompanies.push(companyInfo);
     }
-    return companyData;
+
+    // Remove duplicates based on company name
+    const uniqueCompanies = Array.from(
+      new Map(allCompanies.map(company => [company.company_name, company]))
+    ).map(([_, company]) => company);
+
+    return uniqueCompanies;
+  } catch (error) {
+    console.error('Error processing company documents:', error);
+    return [];
+  }
 }
 
-function extractDataFromText(text) {
-    const companyNameMatch = text.match(/Company name\s+(.*)/);
-    const websiteMatch = text.match(/Company website\s+(.*)/);
-    const numStudentsMatch = text.match(/Number of students\s+(\d+)/);
-    const allowanceMatch = text.match(/Monthly allowance\s+(.*)/);
-    const workingDaysMatch = text.match(/Working Days:\s+(.*)/);
-    const descriptionMatch = text.match(/Company brief description\s+(.*?)(?=Indicate)/s);
-    const rolesMatch = text.match(/(\d+\.\s+.*?Intern).*?Requirement.*?-\s+(.*)/gs);
+function extractCompanyInfo(text, fileName) {
+    const cleanedText = text
+        .replace(/â€"/g, '-')
+        .replace(/â€™/g, "'")
+        .replace(/â€œ/g, '"')
+        .replace(/â€/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    return {
-        company_name: companyNameMatch ? companyNameMatch[1].trim() : '',
-        website: websiteMatch ? websiteMatch[1].trim() : '',
-        num_students: numStudentsMatch ? parseInt(numStudentsMatch[1]) : 0,
-        monthly_allowance: allowanceMatch ? allowanceMatch[1].trim() : '',
-        working_days: workingDaysMatch ? workingDaysMatch[1].trim() : '',
-        company_description: descriptionMatch ? descriptionMatch[1].trim() : '',
-        job_roles: rolesMatch ? rolesMatch.map(match => match.split('Requirement')[0].trim()) : [],
-        requirements: rolesMatch ? rolesMatch.map(match => match.split('Requirement')[1].trim()) : []
+    const companyName = extractValue(cleanedText, /Company name\s*([\s\S]+?)\s*Company website/i);
+    const website = extractValue(cleanedText, /Company website\s*([\S]+)/i);
+    const studentsText = extractValue(cleanedText, /Number of students\s*([\s\S]+?)\s*Monthly allowance/i);
+    const allowanceText = extractValue(cleanedText, /Monthly allowance\s*(?:THB|USD)?\s*([\d,]+)/i);
+    const workingDays = extractValue(cleanedText, /Working Days\s*:\s*([\s\S]+?)(?=\s*Internship period|Company brief description)/i);
+    const description = extractValue(cleanedText, /Company brief description\s*([\s\S]+?)(?=Indicate if|Role and|$)/i);
+    const email = extractEmail(cleanedText);
+
+    const companyInfo = {
+        file_name: fileName,
+        company_name: companyName,
+        website: website,
+        number_of_students: parseStudents(studentsText),
+        monthly_allowance: parseAllowance(allowanceText),
+        working_days: parseWorkingDays(workingDays),
+        company_description: cleanDescription(description),
+        job_descriptions: extractPositions(cleanedText),
+        contact_email: email
     };
+
+    return companyInfo;
+}
+
+function extractValue(text, pattern) {
+    const match = text.match(pattern);
+    return match ? match[1].trim() : '';
+}
+
+function parseStudents(text) {
+    if (!text) return [];
+    
+    const studentSpecs = text.split(/,|\sand\s/)
+        .map(spec => spec.trim())
+        .filter(Boolean);
+    
+    return studentSpecs.map(spec => {
+        const countMatch = spec.match(/(\d+)(?:\s*-\s*(\d+))?\s*student/i);
+        const positionMatch = spec.match(/student[s]?\s*(?:in\s*)?(.+?)(?=\s*$|\s*,)/i);
+        
+        const count = countMatch 
+            ? countMatch[2] 
+                ? { min: parseInt(countMatch[1]), max: parseInt(countMatch[2]) }
+                : parseInt(countMatch[1])
+            : 1;
+            
+        const position = positionMatch 
+            ? positionMatch[1].trim() 
+            : spec.trim();
+            
+        return {
+            count: count,
+            position: position
+        };
+    });
+}
+
+function parseAllowance(text) {
+    if (!text) return null;
+    
+    const amount = parseInt(text.replace(/,/g, ''));
+    return amount ? {
+        amount: amount,
+        currency: 'THB'
+    } : null;
+}
+
+function parseWorkingDays(text) {
+    if (!text) return null;
+    const daysMatch = text.match(/(?:Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday)(?:\s*(?:to|-)\s*(?:Mon|Monday|Tue|Tuesday|Wed|Wednesday|Thu|Thursday|Fri|Friday|Sat|Saturday|Sun|Sunday))?/i);
+    const timeMatch = text.match(/\(([0-9.:]+)\s*-\s*([0-9.:]+)\)/);
+    
+    return {
+        days: daysMatch ? daysMatch[0].trim() : text,
+        hours: timeMatch ? {
+            start: timeMatch[1].trim(),
+            end: timeMatch[2].trim()
+        } : null
+    };
+}
+
+function cleanDescription(text) {
+    return text ? text.replace(/\s+/g, ' ').trim() : '';
+}
+
+function extractPositions(text) {
+    const positions = [];
+    const sections = [
+        /Role and Responsibilities?([\s\S]+?)(?=Requirements|Qualifications|$)/i,
+        /Job Description\s*:?([\s\S]+?)(?=Requirements|Qualifications|$)/i,
+        /Position\s*:?([\s\S]+?)(?=Requirements|Qualifications|$)/i
+    ];
+
+    for (const pattern of sections) {
+        const match = text.match(pattern);
+        if (match) {
+            const content = match[1];
+            const roleMatches = content.match(/[•-]\s*([^\n]+)/g) || [];
+            
+            roleMatches.forEach(role => {
+                positions.push(role.replace(/^[•-]\s*/, '').trim());
+            });
+        }
+    }
+
+    // If no structured positions found, extract from number of students section
+    if (positions.length === 0) {
+        const studentsMatch = text.match(/Number of students[^]*?(\d+)[^]*?(?:in\s+)?([^,\n]+)/i);
+        if (studentsMatch && studentsMatch[2]) {
+            positions.push(studentsMatch[2].trim());
+        }
+    }
+
+    return positions;
+}
+
+function extractEmail(text) {
+    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    return emailMatch ? emailMatch[0] : null;
 }

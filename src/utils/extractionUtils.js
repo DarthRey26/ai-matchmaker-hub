@@ -11,7 +11,7 @@ export function extractInfo(content, type) {
 function extractCompanyInfo(content) {
   const info = {};
   
-  const companyNameMatch = content.match(/Company name\s*(.+)/);
+  const companyNameMatch = content.match(/Company name\s*:?\s*(.+?)(?:\n|$)/i);
   if (companyNameMatch) info.company_name = companyNameMatch[1].trim();
   
   const websiteMatch = content.match(/Company website\s*(.+)/);
@@ -30,7 +30,19 @@ function extractCompanyInfo(content) {
   if (descriptionMatch) info.company_description = descriptionMatch[1].trim();
   
   const jobDescriptions = content.match(/(\d+\.\s*.+?Intern.+?)(?=\d+\.\s*.+?Intern|\Z)/gs);
-  if (jobDescriptions) info.job_descriptions = jobDescriptions.map(desc => desc.trim());
+  if (jobDescriptions) {
+    info.job_descriptions = jobDescriptions.map(desc => {
+      const titleMatch = desc.match(/(\d+\.\s*)(.+?)(?:\n|$)/);
+      const descriptionMatch = desc.match(/Job Description\s*:?\s*(.+?)(?:\n|$)/i);
+      const requirementsMatch = desc.match(/Requirements\s*:?\s*(.+?)(?:\n|$)/i);
+      
+      return {
+        title: titleMatch ? titleMatch[2].trim() : '',
+        description: descriptionMatch ? descriptionMatch[1].trim() : '',
+        requirements: requirementsMatch ? requirementsMatch[1].trim() : ''
+      };
+    });
+  }
   
   return cleanAndNormalize(info);
 }
@@ -88,3 +100,5 @@ export function convertToCSV(data, type) {
 
   return csvContent;
 }
+
+
