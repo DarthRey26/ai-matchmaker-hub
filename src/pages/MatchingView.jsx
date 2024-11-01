@@ -1,25 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Sidebar from '../components/Sidebar';
-import { generateCSV, downloadCSV, generateCompanyDataCSV } from '../utils/csvUtils';
+import { generateCSV, downloadCSV } from '../utils/csvUtils';
+import { MatchManager } from '../utils/matchManager.js';
+import MatchingTable from '../components/MatchingTable';
+import { Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const MatchingView = () => {
   const [matchingData, setMatchingData] = useState([]);
+  const [accuracyReport, setAccuracyReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hasStartedMatching, setHasStartedMatching] = useState(false);
+
+  const handleStatusChange = (studentName, outcomeField, newStatus) => {
+    setMatchingData(prevData => 
+      prevData.map(student => {
+        if (student.studentName === studentName) {
+          const matches = [...student.matches];
+          const matchIndex = outcomeField === 'outcome1' ? 0 : 1;
+          matches[matchIndex] = { ...matches[matchIndex], status: newStatus };
+          return { ...student, matches };
+        }
+        return student;
+      })
+    );
+  };
 
   const fetchMatchingData = async () => {
     setIsLoading(true);
+    setHasStartedMatching(true);
     setError(null);
     try {
       const response = await fetch('http://localhost:3001/api/matching-data');
-      if (!response.ok) {
-        throw new Error('Failed to fetch matching data');
-      }
+      if (!response.ok) throw new Error('Failed to fetch matching data');
       const data = await response.json();
-      setMatchingData(data);
+      
+      const processedData = data.matches.map(student => ({
+        ...student,
+        matches: student.matches.map(match => ({
+          ...match,
+          status: 'Not Yet'
+        }))
+      }));
+      
+      setMatchingData(processedData);
+      setAccuracyReport(data.accuracyReport);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -28,22 +56,9 @@ const MatchingView = () => {
   };
 
   const handleDownloadCSV = () => {
-    const csv = generateCSV(matchingData);
-    downloadCSV(csv, 'student_company_matching.csv');
-  };
-
-  const handleDownloadCompanyData = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/company-data');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const csv = generateCompanyDataCSV(data);
-      downloadCSV(csv, 'company_data.csv');
-    } catch (error) {
-      console.error('Error fetching company data:', error);
-      setError(`Failed to fetch company data: ${error.message}`);
+    if (matchingData.length) {
+      const csvData = generateCSV(matchingData);
+      downloadCSV(csvData, 'matching-results.csv');
     }
   };
 
@@ -51,52 +66,54 @@ const MatchingView = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto p-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Student-Company Matching</CardTitle>
-              <div>
-                <Button onClick={fetchMatchingData} disabled={isLoading} className="mr-2">
-                  {isLoading ? 'Processing...' : 'Start Matching'}
-                </Button>
-                <Button onClick={handleDownloadCSV} disabled={isLoading || matchingData.length === 0}>
-                  Download CSV
-                </Button>
-                <Button onClick={handleDownloadCompanyData} className="ml-2">
-                  Download Company Data
-                </Button>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Student-Company Matching</CardTitle>
+                <div className="space-x-2">
+                  <Button 
+                    onClick={fetchMatchingData}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Start Matching'
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={handleDownloadCSV}
+                    disabled={!matchingData.length || isLoading}
+                  >
+                    Download CSV
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              {isLoading && <div className="text-center py-4">Processing matches... Please wait.</div>}
-              {error && <div className="text-red-500 text-center py-4">{error}</div>}
-              {!isLoading && !error && matchingData.length > 0 && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead>Company 1</TableHead>
-                      <TableHead>Probability 1</TableHead>
-                      <TableHead>Company 2</TableHead>
-                      <TableHead>Probability 2</TableHead>
-                      <TableHead>Company 3</TableHead>
-                      <TableHead>Probability 3</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {matchingData.map((student, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{student.studentName}</TableCell>
-                        {student.matches.map((match, idx) => (
-                          <React.Fragment key={idx}>
-                            <TableCell>{match.companyName}</TableCell>
-                            <TableCell>{match.probability}</TableCell>
-                          </React.Fragment>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-full max-w-md">
+                    <div className="mb-4 text-center text-gray-600">
+                      Processing Student-Company Matches...
+                    </div>
+                    <Progress value={75} className="w-full" />
+                  </div>
+                </div>
+              ) : hasStartedMatching ? (
+                <MatchingTable 
+                  matchingData={matchingData} 
+                  onStatusChange={handleStatusChange}
+                  accuracyReport={accuracyReport}
+                />
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Click "Start Matching" to begin the matching process
+                </div>
               )}
             </CardContent>
           </Card>

@@ -1,24 +1,28 @@
-import * as pdfjs from 'pdfjs-dist';
-import { getDocument } from 'pdfjs-dist/webpack';
+import * as pdfjsLib from 'pdfjs-dist';
 import nlp from 'compromise';
-import { extractTextFromPDF, extractDataFromText, extractEntities } from './advancedExtraction';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.createWorkerURL();
 
 export async function extractTextFromPDF(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  let fullText = '';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const loadingTask = pdfjsLib.getDocument(uint8Array);
+    const pdf = await loadingTask.promise;
+    let fullText = '';
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items.map(item => item.str).join(' ');
-    fullText += pageText + ' ';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      fullText += pageText + ' ';
+    }
+
+    return fullText;
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    throw error;
   }
-
-  return fullText;
 }
 
 export async function extractStudentData(file) {

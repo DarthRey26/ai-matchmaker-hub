@@ -7,7 +7,8 @@ import { Worker } from 'worker_threads';
 import { addDocument, removeDocument, getAllDocuments } from './db.js';
 import { fileURLToPath } from 'url';
 import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
-import { matchStudentsToCompanies } from '../src/utils/matchingAlgorithm.js';
+import { matchStudentsToCompanies, enhancedMatchingAlgorithm } from '../src/utils/matchingAlgorithm.js';
+import { BidirectionalMatcher } from '../src/utils/bidirectionalMatching.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -173,20 +174,24 @@ app.get('/api/matching-data', async (req, res) => {
     console.log('Company data:', JSON.stringify(companyData, null, 2));
 
     console.log('Matching students to companies...');
-    const matchingResults = matchStudentsToCompanies(studentData, companyData);
-    console.log('Matching results:', JSON.stringify(matchingResults, null, 2));
-
-    if (!matchingResults || matchingResults.length === 0) {
-      return res.status(404).json({ error: 'No matching results found' });
-    }
-
-    const formattedResults = matchingResults.map(result => ({
-      studentName: result.name.replace(/^\d+-/, ''),
-      matches: result.matches.map(match => ({
-        companyName: match.company,
-        probability: match.probability.toFixed(2)
-      }))
-    }));
+    const bidirectionalMatcher = new BidirectionalMatcher(studentData, companyData);
+    const matchingResults = bidirectionalMatcher.generateMatchingMetrics();
+    
+    const formattedResults = {
+      matches: matchingResults.map(result => ({
+        studentName: result.student,
+        matches: result.matches.slice(0, 2).map(match => ({
+          companyName: match.company,
+          probability: Number((match.bidirectionalScore * 100).toFixed(2)),
+          status: 'Not Yet',
+          qualityMetrics: {
+            skillFit: Number((match.details.student.skillMatch).toFixed(2)),
+            experienceFit: Number((match.details.student.experienceMatch).toFixed(2)),
+            overallQuality: Number((match.bidirectionalScore * 100).toFixed(2))
+          }
+        }))
+      })).filter(result => result.matches.length > 0)
+    };
 
     res.json(formattedResults);
   } catch (error) {

@@ -5,6 +5,9 @@ import nlp from 'compromise';
 import natural from 'natural';
 export { matchStudentsToCompanies } from './matchingAlgorithm.js';
 
+// Add tokenizer export
+export const tokenizer = new natural.WordTokenizer();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
