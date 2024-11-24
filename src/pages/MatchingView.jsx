@@ -80,8 +80,12 @@ const MatchingView = () => {
   };
 
   const getFileName = (filePath) => {
-    const parts = filePath.split('-');
-    return parts.slice(1).join('-');
+    // Remove timestamp and format name
+    return filePath.formatted || filePath.original
+      .replace(/^\d+-/, '')
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/\.pdf$/, '')
+      .trim();
   };
 
   return (
@@ -122,12 +126,12 @@ const MatchingView = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <User className="mr-2 h-5 w-5" />
-                      Students ({documents.students.length})
+                      Students ({documents.students?.length || 0})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                      {documents.students.map((student, index) => (
+                      {documents.students?.map((student, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
                           <Badge variant="secondary">
                             {getFileName(student)}
@@ -141,12 +145,12 @@ const MatchingView = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Building2 className="mr-2 h-5 w-5" />
-                      Companies ({documents.companies.length})
+                      Companies ({documents.companies?.length || 0})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                      {documents.companies.map((company, index) => (
+                      {documents.companies?.map((company, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
                           <Badge variant="secondary">
                             {getFileName(company)}

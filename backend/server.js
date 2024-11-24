@@ -120,9 +120,51 @@ app.post('/api/upload-documents', (req, res, next) => {
 });
 
 app.get('/documents', (req, res) => {
-  const documents = getAllDocuments();
-  res.json(documents);
+  try {
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const studentDir = path.join(uploadsDir, 'students');
+    const companyDir = path.join(uploadsDir, 'companies');
+
+    // Read directories with error handling
+    const students = readDirectory(studentDir);
+    const companies = readDirectory(companyDir);
+    
+    // Format filenames for better display
+    const formatFileName = (fileName) => {
+      return fileName
+        .replace(/^\d+-/, '') // Remove leading timestamp
+        .replace(/([A-Z])/g, ' $1') // Add space before capitals
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+    };
+
+    const response = {
+      students: students.map(file => ({
+        original: file,
+        formatted: formatFileName(file)
+      })),
+      companies: companies.map(file => ({
+        original: file,
+        formatted: formatFileName(file)
+      }))
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting documents:', error);
+    res.status(500).json({ error: 'Failed to get documents' });
+  }
 });
+
+// Add this helper function at the top
+function readDirectory(dirPath) {
+  try {
+    return fs.readdirSync(dirPath);
+  } catch (error) {
+    console.error(`Error reading directory ${dirPath}:`, error);
+    return [];
+  }
+}
 
 app.delete('/delete/:folder/:filename', (req, res) => {
   const { folder, filename } = req.params;
