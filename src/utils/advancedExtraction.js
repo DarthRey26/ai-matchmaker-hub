@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import nlp from 'compromise';
 import natural from 'natural';
+import { cleanAndNormalize } from './cleaningUtils.js';
 export { matchStudentsToCompanies } from './matchingAlgorithm.js';
 
 // Add tokenizer export
