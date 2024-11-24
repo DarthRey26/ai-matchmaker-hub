@@ -64,10 +64,10 @@ const Documents = () => {
             {documents && documents.length > 0 ? (
               documents.map((doc, index) => (
                 <TableRow key={index}>
-                  <TableCell>{doc}</TableCell>
+                  <TableCell>{doc.formatted || doc.original}</TableCell>
                   <TableCell>
-                    <Button variant="outline" onClick={() => handleViewDocument(folder, doc)} className="mr-2">View</Button>
-                    <Button variant="destructive" onClick={() => handleDeleteDocument(folder, doc)}>Delete</Button>
+                    <Button variant="outline" onClick={() => handleViewDocument(folder, doc.original)} className="mr-2">View</Button>
+                    <Button variant="destructive" onClick={() => handleDeleteDocument(folder, doc.original)}>Delete</Button>
                   </TableCell>
                 </TableRow>
               ))

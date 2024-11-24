@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
 import { matchStudentsToCompanies } from '../src/utils/matchingAlgorithm.js';
 import { BidirectionalMatcher } from '../src/utils/bidirectionalMatching.js';
+import { addDocument } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,30 +29,22 @@ app.use((req, res, next) => {
 
 // Set up multer for handling file uploads
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    console.log('Multer destination function called');
-    console.log('Request body:', req.body);
-    console.log('Request query:', req.query);
-    console.log('File:', file);
-
+  destination: (req, file, cb) => {
     const type = req.body.type || req.query.type;
-    console.log('Document type:', type);
 
     if (!type || (type !== 'student' && type !== 'company')) {
-      console.error('Invalid document type:', type);
       return cb(new Error('Invalid or missing document type'));
     }
 
     const uploadPath = path.join(__dirname, 'uploads', type === 'student' ? 'students' : 'companies');
-    console.log('Upload path:', uploadPath);
 
-    try {
-      await fs.mkdir(uploadPath, { recursive: true });
+    fs.mkdir(uploadPath, { recursive: true }, (err) => {
+      if (err) {
+        console.error('Error creating directory:', err);
+        return cb(err);
+      }
       cb(null, uploadPath);
-    } catch (error) {
-      console.error('Error creating directory:', error);
-      cb(error);
-    }
+    });
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
