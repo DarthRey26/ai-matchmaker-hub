@@ -1,13 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import fs from 'fs/promises';
+import * as fs from 'fs';  // Changed to import all fs functions
 import path from 'path';
-import { Worker } from 'worker_threads';
-import { addDocument, removeDocument, getAllDocuments } from './db.js';
 import { fileURLToPath } from 'url';
 import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
-import { matchStudentsToCompanies, enhancedMatchingAlgorithm } from '../src/utils/matchingAlgorithm.js';
+import { matchStudentsToCompanies } from '../src/utils/matchingAlgorithm.js';
 import { BidirectionalMatcher } from '../src/utils/bidirectionalMatching.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -126,17 +124,24 @@ app.get('/documents', (req, res) => {
     const studentDir = path.join(uploadsDir, 'students');
     const companyDir = path.join(uploadsDir, 'companies');
 
-    // Read directories with error handling
+    // Ensure directories exist
+    if (!fs.existsSync(studentDir)) {
+      fs.mkdirSync(studentDir, { recursive: true });
+    }
+    if (!fs.existsSync(companyDir)) {
+      fs.mkdirSync(companyDir, { recursive: true });
+    }
+
+    // Read directories synchronously
     const students = fs.readdirSync(studentDir).filter(file => file.endsWith('.pdf'));
     const companies = fs.readdirSync(companyDir).filter(file => file.endsWith('.pdf'));
     
-    // Format filenames for better display
     const formatFileName = (fileName) => {
       return fileName
-        .replace(/^\d+-/, '') // Remove leading timestamp
-        .replace(/([A-Z])/g, ' $1') // Add space before capitals
-        .replace(/\s+/g, ' ') // Normalize spaces
-        .replace(/\.pdf$/, '') // Remove .pdf extension
+        .replace(/^\d+-/, '')
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/\s+/g, ' ')
+        .replace(/\.pdf$/, '')
         .trim();
     };
 
@@ -151,7 +156,6 @@ app.get('/documents', (req, res) => {
       }))
     };
 
-    console.log('Documents found:', response);
     res.json(response);
   } catch (error) {
     console.error('Error getting documents:', error);
