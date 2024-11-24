@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { HomeIcon, UsersIcon, FileTextIcon, ChevronLeftIcon, ChevronRightIcon, FileIcon } from 'lucide-react';
+import { HomeIcon, UsersIcon, FileTextIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -37,14 +37,6 @@ const Sidebar = () => {
               <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
                 <FileTextIcon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-2'}`} />
                 {!isCollapsed && 'View Documents'}
-              </Button>
-            </Link>
-          </li>
-          <li>
-            <Link to="/extracted-text">
-              <Button variant="ghost" className={`w-full justify-${isCollapsed ? 'center' : 'start'}`}>
-                <FileIcon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-2'}`} />
-                {!isCollapsed && 'Extracted Text'}
               </Button>
             </Link>
           </li>
