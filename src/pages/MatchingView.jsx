@@ -3,19 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Sidebar from '../components/Sidebar';
 import { generateCSV, downloadCSV } from '../utils/csvUtils';
-import { MatchManager } from '../utils/matchManager.js';
 import MatchingTable from '../components/MatchingTable';
 import { Loader2, User, Building2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const MatchingView = () => {
   const [matchingData, setMatchingData] = useState([]);
   const [documents, setDocuments] = useState({ students: [], companies: [] });
-  const [accuracyReport, setAccuracyReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [hasStartedMatching, setHasStartedMatching] = useState(false);
 
   useEffect(() => {
@@ -25,48 +23,28 @@ const MatchingView = () => {
   const fetchDocuments = async () => {
     try {
       const response = await fetch('http://localhost:3001/documents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
       const data = await response.json();
+      console.log('Fetched documents:', data);
       setDocuments(data);
     } catch (err) {
       console.error('Error fetching documents:', err);
+      toast.error('Failed to fetch documents');
     }
-  };
-
-  const handleStatusChange = (studentName, outcomeField, newStatus) => {
-    setMatchingData(prevData => 
-      prevData.map(student => {
-        if (student.studentName === studentName) {
-          const matches = [...student.matches];
-          const matchIndex = outcomeField === 'outcome1' ? 0 : 1;
-          matches[matchIndex] = { ...matches[matchIndex], status: newStatus };
-          return { ...student, matches };
-        }
-        return student;
-      })
-    );
   };
 
   const fetchMatchingData = async () => {
     setIsLoading(true);
     setHasStartedMatching(true);
-    setError(null);
     try {
       const response = await fetch('http://localhost:3001/api/matching-data');
       if (!response.ok) throw new Error('Failed to fetch matching data');
       const data = await response.json();
-      
-      const processedData = data.matches.map(student => ({
-        ...student,
-        matches: student.matches.map(match => ({
-          ...match,
-          status: 'Not Yet'
-        }))
-      }));
-      
-      setMatchingData(processedData);
-      setAccuracyReport(data.accuracyReport);
+      setMatchingData(data.matches);
     } catch (err) {
-      setError(err.message);
+      toast.error('Failed to fetch matching data');
     } finally {
       setIsLoading(false);
     }
@@ -77,15 +55,6 @@ const MatchingView = () => {
       const csvData = generateCSV(matchingData);
       downloadCSV(csvData, 'matching-results.csv');
     }
-  };
-
-  const getFileName = (filePath) => {
-    // Remove timestamp and format name
-    return filePath.formatted || filePath.original
-      .replace(/^\d+-/, '')
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/\.pdf$/, '')
-      .trim();
   };
 
   return (
@@ -100,7 +69,7 @@ const MatchingView = () => {
                 <div className="space-x-2">
                   <Button 
                     onClick={fetchMatchingData}
-                    disabled={isLoading}
+                    disabled={isLoading || !documents.students.length || !documents.companies.length}
                   >
                     {isLoading ? (
                       <>
@@ -133,8 +102,8 @@ const MatchingView = () => {
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                       {documents.students?.map((student, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
-                          <Badge variant="secondary">
-                            {getFileName(student)}
+                          <Badge variant="secondary" className="text-sm">
+                            {student.formatted}
                           </Badge>
                         </div>
                       ))}
@@ -152,8 +121,8 @@ const MatchingView = () => {
                     <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                       {documents.companies?.map((company, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
-                          <Badge variant="secondary">
-                            {getFileName(company)}
+                          <Badge variant="secondary" className="text-sm">
+                            {company.formatted}
                           </Badge>
                         </div>
                       ))}
@@ -164,33 +133,30 @@ const MatchingView = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Matching Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-full max-w-md">
-                    <div className="mb-4 text-center text-gray-600">
-                      Processing Student-Company Matches...
+          {hasStartedMatching && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Matching Results</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-full max-w-md">
+                      <div className="mb-4 text-center text-gray-600">
+                        Processing Student-Company Matches...
+                      </div>
+                      <Progress value={75} className="w-full" />
                     </div>
-                    <Progress value={75} className="w-full" />
                   </div>
-                </div>
-              ) : hasStartedMatching ? (
-                <MatchingTable 
-                  matchingData={matchingData} 
-                  onStatusChange={handleStatusChange}
-                  accuracyReport={accuracyReport}
-                />
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Click "Start Matching" to begin the matching process
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <MatchingTable 
+                    matchingData={matchingData}
+                    onStatusChange={() => {}}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

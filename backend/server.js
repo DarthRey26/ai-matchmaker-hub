@@ -119,6 +119,7 @@ app.post('/api/upload-documents', (req, res, next) => {
   }
 });
 
+// Update the documents route to handle absolute paths
 app.get('/documents', (req, res) => {
   try {
     const uploadsDir = path.join(__dirname, 'uploads');
@@ -126,8 +127,8 @@ app.get('/documents', (req, res) => {
     const companyDir = path.join(uploadsDir, 'companies');
 
     // Read directories with error handling
-    const students = readDirectory(studentDir);
-    const companies = readDirectory(companyDir);
+    const students = fs.readdirSync(studentDir).filter(file => file.endsWith('.pdf'));
+    const companies = fs.readdirSync(companyDir).filter(file => file.endsWith('.pdf'));
     
     // Format filenames for better display
     const formatFileName = (fileName) => {
@@ -135,6 +136,7 @@ app.get('/documents', (req, res) => {
         .replace(/^\d+-/, '') // Remove leading timestamp
         .replace(/([A-Z])/g, ' $1') // Add space before capitals
         .replace(/\s+/g, ' ') // Normalize spaces
+        .replace(/\.pdf$/, '') // Remove .pdf extension
         .trim();
     };
 
@@ -149,22 +151,13 @@ app.get('/documents', (req, res) => {
       }))
     };
 
+    console.log('Documents found:', response);
     res.json(response);
   } catch (error) {
     console.error('Error getting documents:', error);
     res.status(500).json({ error: 'Failed to get documents' });
   }
 });
-
-// Add this helper function at the top
-function readDirectory(dirPath) {
-  try {
-    return fs.readdirSync(dirPath);
-  } catch (error) {
-    console.error(`Error reading directory ${dirPath}:`, error);
-    return [];
-  }
-}
 
 app.delete('/delete/:folder/:filename', (req, res) => {
   const { folder, filename } = req.params;
