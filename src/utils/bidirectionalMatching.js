@@ -13,10 +13,10 @@ export class BidirectionalMatcher {
     // Add student documents with weighted features
     this.students.forEach(student => {
       const studentDoc = [
-        ...(student.skills || []).map(skill => skill.repeat(3)), // Weight skills higher
-        ...(student.experience?.flatMap(exp => exp.job_titles || []) || []).map(title => title.repeat(2)), // Weight job titles
+        ...(Array.isArray(student.skills) ? student.skills.map(skill => skill.repeat(3)) : []), // Weight skills higher
+        ...(Array.isArray(student.experience) ? student.experience.flatMap(exp => Array.isArray(exp.job_titles) ? exp.job_titles.map(title => title.repeat(2)) : []) : []), // Weight job titles
         student.name,
-        ...(student.keywords || [])
+        ...(Array.isArray(student.keywords) ? student.keywords : [])
       ].join(' ').toLowerCase();
       this.tfidf.addDocument(studentDoc);
     });
@@ -24,10 +24,10 @@ export class BidirectionalMatcher {
     // Add company documents with weighted features
     this.companies.forEach(company => {
       const companyDoc = [
-        company.company_name.repeat(3), // Weight company name higher
-        company.company_description,
-        ...(company.job_descriptions?.map(job => job.description.repeat(2)) || []), // Weight job descriptions
-        ...(company.requirements || []).map(req => req.repeat(2)), // Weight requirements
+        company.company_name ? company.company_name.repeat(3) : '', // Weight company name higher
+        company.company_description || '',
+        ...(Array.isArray(company.job_descriptions) ? company.job_descriptions.map(job => job.description ? job.description.repeat(2) : '') : []), // Weight job descriptions
+        ...(Array.isArray(company.requirements) ? company.requirements.map(req => req) : []), // Weight requirements
       ].join(' ').toLowerCase();
       this.tfidf.addDocument(companyDoc);
     });
