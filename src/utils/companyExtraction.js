@@ -1,73 +1,65 @@
 import * as fs from 'fs';
 import path from 'path';
-import nlp from 'compromise';
+import { 
+  cleanText, 
+  normalizeText, 
+  removeExtraInformation, 
+  extractListItems,
+  standardizeCompanyName,
+  extractRole
+} from './textCleaningUtils.js';
 
 function extractCompanyInfo(content, filename) {
-  const info = {};
+  const info = {
+    company_name: '',
+    role: '',
+    requirements: [],
+    job_descriptions: [],
+    additional_info: {}
+  };
   
-  // Extract company name from filename first as fallback
-  const filenameParts = path.basename(filename, '.pdf').split('_');
-  info.company_name = filenameParts[0].replace(/-/g, ' ').trim();
+  // Extract company name and role
+  info.company_name = standardizeCompanyName(filename, content);
+  info.role = extractRole(filename, content);
   
-  // Try to extract from content with improved patterns
-  const companyNamePatterns = [
-    /company\s*name\s*:?\s*([^:\n]+?)(?=\s*(?:company website|brief company description|$))/i,
-    /^([^:\n]+?)\s*(?:company website|brief company description)/i,
-    /([^:\n]+?)\s*brief company description/i
-  ];
-
-  for (const pattern of companyNamePatterns) {
-    const match = content.match(pattern);
-    if (match) {
-      info.company_name = match[1].trim()
-        .replace(/\s+/g, ' ')
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      break;
-    }
-  }
-
-  // Extract role/position
-  const rolePatterns = [
-    /position\s*:?\s*([^:\n]+)/i,
-    /job\s*title\s*:?\s*([^:\n]+)/i,
-    /role\s*:?\s*([^:\n]+)/i
-  ];
-
-  for (const pattern of rolePatterns) {
-    const match = content.match(pattern);
-    if (match) {
-      info.role = match[1].trim();
-      break;
-    }
-  }
-
-  // If no role found in content, try to extract from filename
-  if (!info.role && filenameParts.length > 1) {
-    info.role = filenameParts.slice(1).join(' ').replace(/-/g, ' ').trim();
-  }
-
   // Extract job descriptions with improved parsing
-  const jobDescriptionSection = content.match(/job\s*description\s*\(?s?\)?:?\s*([^]*?)(?=internship requirement|additional note|$)/i);
+  const jobDescriptionSection = content.match(/job\s*description\s*:?\s*([^]*?)(?=requirements|qualifications|about us|$)/i);
   if (jobDescriptionSection) {
-    const jobDescText = jobDescriptionSection[1];
-    info.job_descriptions = jobDescText
-      .split(/(?=●|\d+\.)/)
-      .filter(desc => desc.trim())
+    info.job_descriptions = extractListItems(jobDescriptionSection[1])
       .map(desc => ({
-        description: desc.replace(/^[●\d\.]\s*/, '').trim()
+        description: removeExtraInformation(desc)
       }));
   }
 
   // Extract requirements with better structure
-  const requirementsSection = content.match(/(?:internship\s*requirement|requirements|qualifications)\s*\(?s?\)?:?\s*([^]*?)(?=additional note|benefits|$)/i);
-  if (requirementsSection) {
-    info.requirements = requirementsSection[1]
-      .split(/(?=●|\d+\.)/)
-      .filter(req => req.trim())
-      .map(req => req.replace(/^[●\d\.]\s*/, '').trim());
+  const requirementPatterns = [
+    /requirements\s*:?\s*([^]*?)(?=benefits|additional|$)/i,
+    /qualifications\s*:?\s*([^]*?)(?=benefits|additional|$)/i,
+    /what\s*we\s*need\s*:?\s*([^]*?)(?=benefits|additional|$)/i
+  ];
+
+  for (const pattern of requirementPatterns) {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      info.requirements = extractListItems(match[1])
+        .map(req => removeExtraInformation(req));
+      break;
+    }
   }
+
+  // Extract additional information
+  const additionalPatterns = {
+    working_hours: /(?:working|office)\s*hours\s*:?\s*([^:\n]+)/i,
+    location: /(?:location|workplace)\s*:?\s*([^:\n]+)/i,
+    salary: /(?:salary|compensation|allowance)\s*:?\s*([^:\n]+)/i
+  };
+
+  Object.entries(additionalPatterns).forEach(([key, pattern]) => {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      info.additional_info[key] = cleanText(match[1]);
+    }
+  });
 
   return info;
 }
@@ -81,15 +73,37 @@ export async function processCompanyPDFs(directory) {
     );
 
     const allCompanies = [];
+    const processedCompanies = new Map();
 
     for (const file of supportedFiles) {
       const filePath = path.join(directory, file);
-      const text = await extractTextFromPDF(filePath);
+      const text = await fs.promises.readFile(filePath, 'utf8');
       const companyInfo = extractCompanyInfo(text, file);
-      allCompanies.push(companyInfo);
+
+      // Group by company name to handle multiple roles
+      if (processedCompanies.has(companyInfo.company_name)) {
+        const existing = processedCompanies.get(companyInfo.company_name);
+        existing.roles = existing.roles || [];
+        existing.roles.push({
+          title: companyInfo.role,
+          requirements: companyInfo.requirements,
+          job_descriptions: companyInfo.job_descriptions,
+          additional_info: companyInfo.additional_info
+        });
+      } else {
+        processedCompanies.set(companyInfo.company_name, {
+          ...companyInfo,
+          roles: [{
+            title: companyInfo.role,
+            requirements: companyInfo.requirements,
+            job_descriptions: companyInfo.job_descriptions,
+            additional_info: companyInfo.additional_info
+          }]
+        });
+      }
     }
 
-    return allCompanies;
+    return Array.from(processedCompanies.values());
   } catch (error) {
     console.error('Error processing company documents:', error);
     return [];
