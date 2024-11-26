@@ -21,11 +21,13 @@ async function initPdfjsLib() {
     pdfjsLib = pdfjs.default;
     const pdfjsWorker = path.resolve(__dirname, '../../node_modules/pdfjs-dist/build/pdf.worker.js');
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(pdfjsWorker, import.meta.url).href;
+    pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = 'path_to_your_fonts_directory';
   } else {
     // Browser environment
     const pdfjs = await import('pdfjs-dist/build/pdf.js');
     pdfjsLib = pdfjs.default;
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.standardFontDataUrl = 'path_to_your_fonts_directory';
   }
 }
 
@@ -33,7 +35,7 @@ async function initPdfjsLib() {
 await initPdfjsLib();
 
 const common_skills = [
-    "Python", "Java", "C\\+\\+", "JavaScript", "SQL", "Machine Learning", "Data Analysis",
+    "Python", "Java", "C++", "JavaScript", "SQL", "Machine Learning", "Data Analysis",
     "Project Management", "Leadership", "Communication", "Teamwork", "Problem Solving",
     "Critical Thinking", "Microsoft Office", "Adobe Creative Suite", "Marketing",
     "Sales", "Customer Service", "Financial Analysis", "Accounting", "HTML", "CSS",
