@@ -1,4 +1,5 @@
 import natural from 'natural';
+import path from 'path';
 import { tokenizer } from './advancedExtraction.js';
 
 export class BidirectionalMatcher {
@@ -43,8 +44,8 @@ export class BidirectionalMatcher {
     const studentDoc = this.tfidf.documents[studentIdx];
     const companyDoc = this.tfidf.documents[companyIdx];
     
-    Object.keys(studentDoc).forEach(term => terms.add(term));
-    Object.keys(companyDoc).forEach(term => terms.add(term));
+    Object.keys(studentDoc || {}).forEach(term => terms.add(term));
+    Object.keys(companyDoc || {}).forEach(term => terms.add(term));
 
     let similarity = 0;
     let normStudent = 0;
@@ -60,7 +61,7 @@ export class BidirectionalMatcher {
     });
 
     const normalizedSimilarity = similarity / (Math.sqrt(normStudent) * Math.sqrt(normCompany));
-    return Math.min(normalizedSimilarity, 0.95);
+    return Math.min(normalizedSimilarity || 0, 0.95);
   }
 
   findMatchedSkills(studentSkills = [], companyRequirements = []) {

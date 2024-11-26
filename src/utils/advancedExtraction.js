@@ -6,31 +6,10 @@ import natural from 'natural';
 import { cleanAndNormalize } from './cleaningUtils.js';
 export { matchStudentsToCompanies } from './matchingAlgorithm.js';
 
-// Add tokenizer export
 export const tokenizer = new natural.WordTokenizer();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-let pdfjsLib;
-
-async function initPdfjsLib() {
-  if (typeof window === 'undefined') {
-    // Node.js environment
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.js');
-    pdfjsLib = pdfjs.default;
-    const pdfjsWorker = path.resolve(__dirname, '../../node_modules/pdfjs-dist/build/pdf.worker.js');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(pdfjsWorker, import.meta.url).href;
-  } else {
-    // Browser environment
-    const pdfjs = await import('pdfjs-dist/build/pdf.js');
-    pdfjsLib = pdfjs.default;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-  }
-}
-
-// Initialize pdfjsLib
-await initPdfjsLib();
 
 const common_skills = [
     "Python", "Java", "C\\+\\+", "JavaScript", "SQL", "Machine Learning", "Data Analysis",
@@ -38,7 +17,25 @@ const common_skills = [
     "Critical Thinking", "Microsoft Office", "Adobe Creative Suite", "Marketing",
     "Sales", "Customer Service", "Financial Analysis", "Accounting", "HTML", "CSS",
     "React", "Node.js", "AWS", "Docker", "Kubernetes", "Git", "Agile", "Scrum"
-];
+].map(skill => skill.replace(/\+/g, '\\+')); // Escape + characters properly
+
+async function initPdfjsLib() {
+    if (typeof window === 'undefined') {
+        // Node.js environment
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.js');
+        pdfjsLib = pdfjs.default;
+        const pdfjsWorker = path.resolve(__dirname, '../../node_modules/pdfjs-dist/build/pdf.worker.js');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(pdfjsWorker, import.meta.url).href;
+    } else {
+        // Browser environment
+        const pdfjs = await import('pdfjs-dist/build/pdf.js');
+        pdfjsLib = pdfjs.default;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    }
+}
+
+// Initialize pdfjsLib
+await initPdfjsLib();
 
 export async function extractTextFromPDF(pdfPath) {
     if (!pdfjsLib) {
