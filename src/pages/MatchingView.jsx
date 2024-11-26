@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Sidebar from '../components/Sidebar';
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const MatchingView = () => {
+  const navigate = useNavigate();
   const [matchingData, setMatchingData] = useState([]);
   const [documents, setDocuments] = useState({ students: [], companies: [] });
   const [isLoading, setIsLoading] = useState(false);
@@ -35,26 +37,8 @@ const MatchingView = () => {
     }
   };
 
-  const fetchMatchingData = async () => {
-    setIsLoading(true);
-    setHasStartedMatching(true);
-    try {
-      const response = await fetch('http://localhost:3001/api/matching-data');
-      if (!response.ok) throw new Error('Failed to fetch matching data');
-      const data = await response.json();
-      setMatchingData(data.matches);
-    } catch (err) {
-      toast.error('Failed to fetch matching data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDownloadCSV = () => {
-    if (matchingData.length) {
-      const csvData = generateCSV(matchingData);
-      downloadCSV(csvData, 'matching-results.csv');
-    }
+  const handleStartMatching = () => {
+    navigate('/model-comparison');
   };
 
   return (
@@ -68,23 +52,10 @@ const MatchingView = () => {
                 <CardTitle>Available Documents for Matching</CardTitle>
                 <div className="space-x-2">
                   <Button 
-                    onClick={fetchMatchingData}
-                    disabled={isLoading || !documents.students.length || !documents.companies.length}
+                    onClick={handleStartMatching}
+                    disabled={!documents.students.length || !documents.companies.length}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Start Matching'
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={handleDownloadCSV}
-                    disabled={!matchingData.length || isLoading}
-                  >
-                    Download CSV
+                    Start Matching
                   </Button>
                 </div>
               </div>
@@ -132,31 +103,6 @@ const MatchingView = () => {
               </div>
             </CardContent>
           </Card>
-
-          {hasStartedMatching && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Matching Results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-full max-w-md">
-                      <div className="mb-4 text-center text-gray-600">
-                        Processing Student-Company Matches...
-                      </div>
-                      <Progress value={75} className="w-full" />
-                    </div>
-                  </div>
-                ) : (
-                  <MatchingTable 
-                    matchingData={matchingData}
-                    onStatusChange={() => {}}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>
