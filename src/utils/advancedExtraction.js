@@ -40,7 +40,7 @@ const common_skills = [
     "Critical Thinking", "Microsoft Office", "Adobe Creative Suite", "Marketing",
     "Sales", "Customer Service", "Financial Analysis", "Accounting", "HTML", "CSS",
     "React", "Node.js", "AWS", "Docker", "Kubernetes", "Git", "Agile", "Scrum"
-];
+].map(skill => skill.replace(/\+/g, '\\+')); // Escape + characters properly
 
 export async function extractTextFromPDF(pdfPath) {
     if (!pdfjsLib) {
@@ -146,67 +146,67 @@ export async function processCompanyPDFs(directory) {
 }
 
 function extractCompanyInfo(content) {
-  const info = {};
-  
-  // Improved company name extraction
-  const companyNamePatterns = [
-    /company\s*name\s*:?\s*([^:\n]+?)(?=\s*(?:company website|brief company description|$))/i,
-    /^([^:\n]+?)\s*company website/i,
-    /([^:\n]+?)\s*brief company description/i
-  ];
+    const info = {};
+    
+    // Improved company name extraction
+    const companyNamePatterns = [
+        /company\s*name\s*:?\s*([^:\n]+)/i,
+        /^([^:\n]+?)\s*company website/i,
+        /([^:\n]+?)\s*brief company description/i
+    ];
 
-  for (const pattern of companyNamePatterns) {
-    const match = content.match(pattern);
-    if (match) {
-      info.company_name = match[1].trim()
-        .replace(/\s+/g, ' ')
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      break;
+    for (const pattern of companyNamePatterns) {
+        const match = content.match(pattern);
+        if (match) {
+            info.company_name = match[1].trim()
+                .replace(/\s+/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+            break;
+        }
     }
-  }
 
-  // Extract website
-  const websiteMatch = content.match(/company\s*website\s*:?\s*([^\n]+)/i);
-  if (websiteMatch) info.website = websiteMatch[1].trim();
-  
-  // Extract description
-  const descriptionMatch = content.match(/brief\s*company\s*description\s*:?\s*([^]*?)(?=hours of work|working days|monthly allowance|$)/i);
-  if (descriptionMatch) info.company_description = descriptionMatch[1].trim();
-  
-  // Extract working hours
-  const hoursMatch = content.match(/hours\s*of\s*work\s*:?\s*([^\n]+)/i);
-  if (hoursMatch) info.working_hours = hoursMatch[1].trim();
-  
-  // Extract working days
-  const daysMatch = content.match(/working\s*days\s*:?\s*([^\n]+)/i);
-  if (daysMatch) info.working_days = daysMatch[1].trim();
-  
-  // Extract allowance
-  const allowanceMatch = content.match(/monthly\s*allowance\s*:?\s*([^\n]+)/i);
-  if (allowanceMatch) info.monthly_allowance = allowanceMatch[1].trim();
-  
-  // Extract job descriptions with improved parsing
-  const jobDescriptionSection = content.match(/job\s*description\s*\(?s?\)?:?\s*([^]*?)(?=internship requirement|additional note|$)/i);
-  if (jobDescriptionSection) {
-    const jobDescText = jobDescriptionSection[1];
-    info.job_descriptions = jobDescText
-      .split(/(?=●|\d+\.)/)
-      .filter(desc => desc.trim())
-      .map(desc => ({
-        description: desc.replace(/^[●\d\.]\s*/, '').trim()
-      }));
-  }
+    // Extract website
+    const websiteMatch = content.match(/company\s*website\s*:?\s*([^\n]+)/i);
+    if (websiteMatch) info.website = websiteMatch[1].trim();
+    
+    // Extract description
+    const descriptionMatch = content.match(/brief\s*company\s*description\s*:?\s*([^]*?)(?=hours of work|working days|monthly allowance|$)/i);
+    if (descriptionMatch) info.company_description = descriptionMatch[1].trim();
+    
+    // Extract working hours
+    const hoursMatch = content.match(/hours\s*of\s*work\s*:?\s*([^\n]+)/i);
+    if (hoursMatch) info.working_hours = hoursMatch[1].trim();
+    
+    // Extract working days
+    const daysMatch = content.match(/working\s*days\s*:?\s*([^\n]+)/i);
+    if (daysMatch) info.working_days = daysMatch[1].trim();
+    
+    // Extract allowance
+    const allowanceMatch = content.match(/monthly\s*allowance\s*:?\s*([^\n]+)/i);
+    if (allowanceMatch) info.monthly_allowance = allowanceMatch[1].trim();
+    
+    // Extract job descriptions with improved parsing
+    const jobDescriptionSection = content.match(/job\s*description\s*\(?s?\)?:?\s*([^]*?)(?=internship requirement|additional note|$)/i);
+    if (jobDescriptionSection) {
+        const jobDescText = jobDescriptionSection[1];
+        info.job_descriptions = jobDescText
+            .split(/(?=●|\d+\.)/)
+            .filter(desc => desc.trim())
+            .map(desc => ({
+                description: desc.replace(/^[●\d\.]\s*/, '').trim()
+            }));
+    }
 
-  // Extract requirements
-  const requirementsSection = content.match(/internship\s*requirement\s*\(?s?\)?:?\s*([^]*?)(?=additional note|benefits|$)/i);
-  if (requirementsSection) {
-    info.requirements = requirementsSection[1]
-      .split(/(?=●|\d+\.)/)
-      .filter(req => req.trim())
-      .map(req => req.replace(/^[●\d\.]\s*/, '').trim());
-  }
+    // Extract requirements
+    const requirementsSection = content.match(/internship\s*requirement\s*\(?s?\)?:?\s*([^]*?)(?=additional note|benefits|$)/i);
+    if (requirementsSection) {
+        info.requirements = requirementsSection[1]
+            .split(/(?=●|\d+\.)/)
+            .filter(req => req.trim())
+            .map(req => req.replace(/^[●\d\.]\s*/, '').trim());
+    }
 
-  return info;
+    return info;
 }
