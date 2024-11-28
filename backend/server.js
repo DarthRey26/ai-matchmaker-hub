@@ -208,12 +208,15 @@ app.get('/api/matching-data', async (req, res) => {
     console.log('Matching students to companies...');
     const bidirectionalMatcher = new BidirectionalMatcher(studentData, companyData);
     const matchingResults = bidirectionalMatcher.generateMatchingMetrics();
-    
+
+    console.log('Matching Results:', JSON.stringify(matchingResults, null, 2));
+
     const formattedResults = {
       matches: matchingResults.map(result => ({
         studentName: result.student,
         matches: result.matches.slice(0, 2).map(match => ({
-          companyName: match.company,
+          companyName: match.pdfName,
+          role: match.role,
           probability: Number((match.bidirectionalScore * 100).toFixed(2)),
           status: 'Not Yet',
           qualityMetrics: {

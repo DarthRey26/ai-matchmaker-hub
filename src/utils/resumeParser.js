@@ -61,9 +61,9 @@ function extractFaculty(text) {
 }
 
 function extractSkills(text) {
-  const skillsRegex = /skills:?\s*([^\n]+)/i;
+  const skillsRegex = /c\+\+/i;
   const match = text.match(skillsRegex);
-  return match ? match[1].split(',').map(skill => skill.trim()) : [];
+  return match ? match[0].split(',').map(skill => skill.trim()) : [];
 }
 
 function extractExperience(text) {

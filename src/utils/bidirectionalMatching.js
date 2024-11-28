@@ -120,59 +120,36 @@ export class BidirectionalMatcher {
   }
 
   generateMatchingMetrics() {
-    const results = [];
-    const maxSlotsPerCompany = 2;
-    const companyAssignments = new Map();
-
-    this.students.forEach((student, studentIdx) => {
+    return this.students.map((student, studentIdx) => {
       const matches = this.companies.map((company, companyIdx) => {
-        // Calculate different aspects of the match
         const tfidfScore = this.calculateTfIdfSimilarity(studentIdx, companyIdx);
         const skillMatch = this.calculateSkillMatch(student.skills, company.requirements);
         const experienceMatch = this.calculateExperienceMatch(student.experience, company.requirements);
-        
-        // Weighted scoring with randomization factor for variation
-        const randomFactor = 0.95 + (Math.random() * 0.1); // 0.95-1.05 range
+
+        const randomFactor = 0.95 + (Math.random() * 0.1);
         const score = (
           (tfidfScore * 0.4) + 
-          (skillMatch * 0.35) + 
-          (experienceMatch * 0.25)
+          (skillMatch * 0.3) + 
+          (experienceMatch * 0.3)
         ) * randomFactor;
-        
+
         return {
-          company: company.company_name || 'Unknown Company',
-          bidirectionalScore: Math.min(score, 0.95),
+          pdfName: company.pdfName,
+          role: company.role,
+          bidirectionalScore: score,
           details: {
             student: {
-              skillMatch: skillMatch * 100,
-              experienceMatch: experienceMatch * 100,
-              tfidfScore: tfidfScore * 100
+              skillMatch,
+              experienceMatch
             }
           }
         };
       });
 
-      // Sort matches by score and filter based on available slots
-      const availableMatches = matches
-        .sort((a, b) => b.bidirectionalScore - a.bidirectionalScore)
-        .filter(match => {
-          const currentAssignments = companyAssignments.get(match.company) || 0;
-          return currentAssignments < maxSlotsPerCompany;
-        })
-        .slice(0, 2);
-
-      // Update company assignments
-      availableMatches.forEach(match => {
-        const current = companyAssignments.get(match.company) || 0;
-        companyAssignments.set(match.company, current + 1);
-      });
-
-      results.push({
-        student: student.name || 'Unknown Student',
-        matches: availableMatches
-      });
+      return {
+        student: student.name,
+        matches: matches.sort((a, b) => b.bidirectionalScore - a.bidirectionalScore)
+      };
     });
-
-    return results;
   }
 }
