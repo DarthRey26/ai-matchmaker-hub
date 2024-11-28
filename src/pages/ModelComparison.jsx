@@ -2,11 +2,21 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, CreditCard } from "lucide-react";
+import { CheckCircle, CreditCard, Sparkles } from "lucide-react";
 import Sidebar from '../components/Sidebar';
+import { toast } from "sonner";
 
 const ModelComparison = () => {
   const navigate = useNavigate();
+
+  const handleModelSelect = (model) => {
+    if (model === 'stacked' && !process.env.OPENAI_API_KEY) {
+      toast.error("OpenAI API key is not configured");
+      return;
+    }
+    
+    navigate(model === 'homemade' ? '/matching/process' : '/matching/process-ai');
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -18,7 +28,7 @@ const ModelComparison = () => {
           {/* Iris Homemade Card */}
           <Card 
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate('/matching/process')}
+            onClick={() => handleModelSelect('homemade')}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -45,27 +55,29 @@ const ModelComparison = () => {
           </Card>
 
           {/* Iris Stacked Card */}
-          <Card className="opacity-75">
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => handleModelSelect('stacked')}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-6 w-6 text-purple-500" />
+                <Sparkles className="h-6 w-6 text-purple-500" />
                 Iris Stacked
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-gray-600">Advanced AI-powered matching using deep learning and natural language processing.</p>
+                <p className="text-gray-600">Advanced AI-powered matching using OpenAI's GPT-4 for intelligent student-company pairing.</p>
                 <div className="flex items-center gap-2">
                   <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
                     Pay per use
                   </span>
-                  <span className="text-sm text-gray-500">(Coming Soon)</span>
                 </div>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• Advanced ML algorithms</li>
+                  <li>• AI-powered matching</li>
                   <li>• Deep semantic analysis</li>
                   <li>• Contextual understanding</li>
-                  <li>• Detailed analytics dashboard</li>
+                  <li>• Advanced analytics</li>
                 </ul>
               </div>
             </CardContent>

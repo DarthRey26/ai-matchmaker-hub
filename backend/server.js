@@ -1,20 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import * as fs from 'fs';  // Changed to import all fs functions
+import * as fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
-import { matchStudentsToCompanies } from '../src/utils/matchingAlgorithm.js';
 import { BidirectionalMatcher } from '../src/utils/bidirectionalMatching.js';
 import { addDocument } from './db.js';
+import openaiRoutes from './routes/openaiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:8081', // Update this to match your frontend URL
+  origin: 'http://localhost:8081',
   credentials: true
 }));
 app.use(express.json());
@@ -53,9 +53,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Queue for processing files
-const processQueue = [];
-let isProcessing = false;
+// Add OpenAI routes
+app.use('/api/openai', openaiRoutes);
 
 app.post('/api/upload-documents', (req, res, next) => {
   console.log('Received upload request');
