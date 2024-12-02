@@ -55,9 +55,9 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
             {student.matches.map((match, idx) => (
               <React.Fragment key={idx}>
                 <TableCell>
-                  <div>{match?.companyName || 'No match'}</div>
+                  <div>{match?.company_name || 'No Company'}</div>
                   <div className="text-sm text-gray-500">
-                    {match?.probability ? Number(match.probability).toFixed(2) : 0}%
+                    {match?.probability ? Number(match.probability).toFixed(2) : (match.bidirectionalScore * 100).toFixed(2)}%
                   </div>
                 </TableCell>
                 <TableCell>
@@ -91,24 +91,24 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
                     <div className="space-y-4">
                       {student.matches.map((match, idx) => (
                         <div key={idx} className="border rounded-lg p-4">
-                          <h4 className="font-semibold mb-2">{match?.companyName || 'No match'}</h4>
+                          <h4 className="font-semibold mb-2">{match?.company_name || 'No Company'}</h4>
                           <div className="space-y-2">
                             <div className="flex justify-between">
                               <span>Skills Fit:</span>
                               <span className="font-medium">
-                                {Number(match?.qualityMetrics?.skillFit || 0).toFixed(2)}%
+                                {Number(match?.details?.student?.skillMatch || 0).toFixed(2)}%
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Experience Fit:</span>
                               <span className="font-medium">
-                                {Number(match?.qualityMetrics?.experienceFit || 0).toFixed(2)}%
+                                {Number(match?.details?.student?.experienceMatch || 0).toFixed(2)}%
                               </span>
                             </div>
                             <div className="flex justify-between font-semibold">
                               <span>Overall Quality:</span>
                               <span>
-                                {Number(match?.qualityMetrics?.overallQuality || 0).toFixed(2)}%
+                                {Number((match?.bidirectionalScore || 0) * 100).toFixed(2)}%
                               </span>
                             </div>
                           </div>
