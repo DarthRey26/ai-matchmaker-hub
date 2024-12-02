@@ -14,8 +14,8 @@ export class BidirectionalMatcher {
     // Add student documents with weighted features
     this.students.forEach(student => {
       const studentDoc = [
-        ...(Array.isArray(student.skills) ? student.skills.map(skill => skill.repeat(3)) : []), // Weight skills higher
-        ...(Array.isArray(student.experience) ? student.experience.flatMap(exp => Array.isArray(exp.job_titles) ? exp.job_titles.map(title => title.repeat(2)) : []) : []), // Weight job titles
+        ...(Array.isArray(student.skills) ? student.skills.map(skill => skill.repeat(3)) : []),
+        ...(Array.isArray(student.experience) ? student.experience.flatMap(exp => Array.isArray(exp.job_titles) ? exp.job_titles.map(title => title.repeat(2)) : []) : []),
         student.name,
         ...(Array.isArray(student.keywords) ? student.keywords : [])
       ].join(' ').toLowerCase();
@@ -25,15 +25,15 @@ export class BidirectionalMatcher {
     // Add company documents with weighted features
     this.companies.forEach(company => {
       const companyDoc = [
-        company.company_name ? company.company_name.repeat(3) : '', // Weight company name higher
-        company.company_description || '',
-        ...(Array.isArray(company.job_descriptions) ? company.job_descriptions.map(job => job.description ? job.description.repeat(2) : '') : []), // Weight job descriptions
-        ...(Array.isArray(company.requirements) ? company.requirements.map(req => req) : []), // Weight requirements
+        company.company_name ? company.company_name.repeat(3) : '',
+        company.role ? company.role.repeat(2) : '',
+        ...(Array.isArray(company.requirements) ? company.requirements : []),
+        ...(Array.isArray(company.job_descriptions) ? company.job_descriptions.map(job => job.description || '') : [])
       ].join(' ').toLowerCase();
       this.tfidf.addDocument(companyDoc);
     });
   }
-  
+
   calculateTfIdfSimilarity(studentIdx, companyIdx) {
     const terms = new Set();
     
@@ -134,13 +134,14 @@ export class BidirectionalMatcher {
         ) * randomFactor;
 
         return {
-          pdfName: company.pdfName,
-          role: company.role,
+          pdfName: company.pdfName || 'Unknown Document',
+          company_name: company.company_name || 'Unknown Company',
+          role: company.role || 'Unknown Role',
           bidirectionalScore: score,
           details: {
             student: {
-              skillMatch,
-              experienceMatch
+              skillMatch: skillMatch * 100,
+              experienceMatch: experienceMatch * 100
             }
           }
         };

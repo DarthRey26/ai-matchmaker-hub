@@ -1,109 +1,63 @@
 import * as fs from 'fs';
 import path from 'path';
-import { 
-  cleanText, 
-  normalizeText, 
-  removeExtraInformation, 
-  extractListItems,
-  standardizeCompanyName,
-  extractRole
-} from './textCleaningUtils.js';
 
-function extractCompanyInfo(content, filename) {
-  const info = {
-    company_name: '',
-    role: '',
-    requirements: [],
-    job_descriptions: [],
-    additional_info: {}
-  };
+function extractCompanyNameFromFilename(filename) {
+  // Remove timestamp prefix and file extension
+  const nameWithoutTimestamp = filename.replace(/^\d+-/, '');
+  const nameWithoutExtension = nameWithoutTimestamp.replace(/\.pdf$/, '');
   
-  // Extract company name and role
-  info.company_name = standardizeCompanyName(filename, content);
-  info.role = extractRole(filename, content);
+  // Split by underscore or dash
+  const parts = nameWithoutExtension.split(/[_-]/);
   
-  // Extract job descriptions with improved parsing
-  const jobDescriptionSection = content.match(/job\s*description\s*:?\s*([^]*?)(?=requirements|qualifications|about us|$)/i);
-  if (jobDescriptionSection) {
-    info.job_descriptions = extractListItems(jobDescriptionSection[1])
-      .map(desc => ({
-        description: removeExtraInformation(desc)
-      }));
+  // The company name is typically the first part
+  if (parts[0]) {
+    return parts[0].trim()
+      .replace(/_/g, ' ')
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .trim();
   }
+  
+  return 'Unknown Company';
+}
 
-  // Extract requirements with better structure
-  const requirementPatterns = [
-    /requirements\s*:?\s*([^]*?)(?=benefits|additional|$)/i,
-    /qualifications\s*:?\s*([^]*?)(?=benefits|additional|$)/i,
-    /what\s*we\s*need\s*:?\s*([^]*?)(?=benefits|additional|$)/i
-  ];
-
-  for (const pattern of requirementPatterns) {
-    const match = content.match(pattern);
-    if (match && match[1]) {
-      info.requirements = extractListItems(match[1])
-        .map(req => removeExtraInformation(req));
-      break;
-    }
+function extractRoleFromFilename(filename) {
+  const nameWithoutTimestamp = filename.replace(/^\d+-/, '');
+  const nameWithoutExtension = nameWithoutTimestamp.replace(/\.pdf$/, '');
+  
+  // Split by underscore or dash, take everything after company name
+  const parts = nameWithoutExtension.split(/[_-]/);
+  if (parts.length > 1) {
+    return parts.slice(1).join(' ')
+      .replace(/_/g, ' ')
+      .trim();
   }
-
-  // Extract additional information
-  const additionalPatterns = {
-    working_hours: /(?:working|office)\s*hours\s*:?\s*([^:\n]+)/i,
-    location: /(?:location|workplace)\s*:?\s*([^:\n]+)/i,
-    salary: /(?:salary|compensation|allowance)\s*:?\s*([^:\n]+)/i
-  };
-
-  Object.entries(additionalPatterns).forEach(([key, pattern]) => {
-    const match = content.match(pattern);
-    if (match && match[1]) {
-      info.additional_info[key] = cleanText(match[1]);
-    }
-  });
-
-  return info;
+  
+  return 'Unknown Role';
 }
 
 export async function processCompanyPDFs(directory) {
   try {
     const files = fs.readdirSync(directory);
     const supportedFiles = files.filter(file => 
-      file.toLowerCase().endsWith('.pdf') || 
-      file.toLowerCase().endsWith('.txt')
+      file.toLowerCase().endsWith('.pdf')
     );
 
     const allCompanies = [];
-    const processedCompanies = new Map();
 
     for (const file of supportedFiles) {
-      const filePath = path.join(directory, file);
-      const text = await fs.promises.readFile(filePath, 'utf8');
-      const companyInfo = extractCompanyInfo(text, file);
-
-      // Group by company name to handle multiple roles
-      if (processedCompanies.has(companyInfo.company_name)) {
-        const existing = processedCompanies.get(companyInfo.company_name);
-        existing.roles = existing.roles || [];
-        existing.roles.push({
-          title: companyInfo.role,
-          requirements: companyInfo.requirements,
-          job_descriptions: companyInfo.job_descriptions,
-          additional_info: companyInfo.additional_info
-        });
-      } else {
-        processedCompanies.set(companyInfo.company_name, {
-          ...companyInfo,
-          roles: [{
-            title: companyInfo.role,
-            requirements: companyInfo.requirements,
-            job_descriptions: companyInfo.job_descriptions,
-            additional_info: companyInfo.additional_info
-          }]
-        });
-      }
+      const companyName = extractCompanyNameFromFilename(file);
+      const role = extractRoleFromFilename(file);
+      
+      allCompanies.push({
+        company_name: companyName,
+        role: role,
+        pdfName: file,
+        requirements: [], // Will be populated by text extraction later
+        job_descriptions: [] // Will be populated by text extraction later
+      });
     }
 
-    return Array.from(processedCompanies.values());
+    return allCompanies;
   } catch (error) {
     console.error('Error processing company documents:', error);
     return [];

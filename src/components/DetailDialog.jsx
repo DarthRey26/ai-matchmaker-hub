@@ -20,13 +20,13 @@ export const DetailDialog = ({ match }) => {
             <div key={index} className="mb-6 p-4 border rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">{companyMatch.companyName}</h3>
+                  <h3 className="text-lg font-semibold">{companyMatch.company_name || 'Unknown Company'}</h3>
                   {companyMatch.role && (
                     <p className="text-sm text-gray-500">{companyMatch.role}</p>
                   )}
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-bold">{companyMatch.probability.toFixed(1)}%</span>
+                  <span className="text-xl font-bold">{companyMatch.probability ? companyMatch.probability.toFixed(1) : (companyMatch.bidirectionalScore * 100).toFixed(1)}%</span>
                   <p className="text-sm text-gray-500">Match Score</p>
                 </div>
               </div>
@@ -35,36 +35,33 @@ export const DetailDialog = ({ match }) => {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Skills Match</span>
-                    <span>{companyMatch.qualityMetrics.skillFit.toFixed(1)}%</span>
+                    <span>{companyMatch.qualityMetrics?.skillFit?.toFixed(1) || companyMatch.details?.student?.skillMatch?.toFixed(1) || 0}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics.skillFit} 
+                    value={companyMatch.qualityMetrics?.skillFit || companyMatch.details?.student?.skillMatch || 0}
                     className="h-2"
-                    indicatorClassName={`bg-${companyMatch.qualityMetrics.skillFit > 70 ? 'green' : 'orange'}-500`}
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Experience Match</span>
-                    <span>{companyMatch.qualityMetrics.experienceFit.toFixed(1)}%</span>
+                    <span>{companyMatch.qualityMetrics?.experienceFit?.toFixed(1) || companyMatch.details?.student?.experienceMatch?.toFixed(1) || 0}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics.experienceFit} 
+                    value={companyMatch.qualityMetrics?.experienceFit || companyMatch.details?.student?.experienceMatch || 0}
                     className="h-2"
-                    indicatorClassName={`bg-${companyMatch.qualityMetrics.experienceFit > 70 ? 'green' : 'orange'}-500`}
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Overall Quality</span>
-                    <span>{companyMatch.qualityMetrics.overallQuality.toFixed(1)}%</span>
+                    <span>{companyMatch.qualityMetrics?.overallQuality?.toFixed(1) || (companyMatch.bidirectionalScore * 100).toFixed(1)}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics.overallQuality} 
+                    value={companyMatch.qualityMetrics?.overallQuality || companyMatch.bidirectionalScore * 100}
                     className="h-2"
-                    indicatorClassName={`bg-${companyMatch.qualityMetrics.overallQuality > 70 ? 'green' : 'orange'}-500`}
                   />
                 </div>
 
