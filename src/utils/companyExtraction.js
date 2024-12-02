@@ -1,18 +1,22 @@
 import * as fs from 'fs';
 import path from 'path';
 
-function extractCompanyNameFromFilename(filename) {
+function cleanFileName(filename) {
   // Remove timestamp prefix and file extension
-  const nameWithoutTimestamp = filename.replace(/^\d+-/, '');
-  const nameWithoutExtension = nameWithoutTimestamp.replace(/\.pdf$/, '');
+  return filename
+    .replace(/^\d+-/, '') // Remove timestamp
+    .replace(/\.pdf$/, '') // Remove .pdf extension
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .trim();
+}
+
+function extractCompanyNameFromFilename(filename) {
+  const cleanName = cleanFileName(filename);
+  const parts = cleanName.split(/[_\s-]/);
   
-  // Split by underscore or dash
-  const parts = nameWithoutExtension.split(/[_-]/);
-  
-  // The company name is typically the first part
+  // The company name is typically before the underscore or dash
   if (parts[0]) {
-    return parts[0].trim()
-      .replace(/_/g, ' ')
+    return parts[0]
       .replace(/([A-Z])/g, ' $1') // Add space before capital letters
       .trim();
   }
@@ -21,18 +25,27 @@ function extractCompanyNameFromFilename(filename) {
 }
 
 function extractRoleFromFilename(filename) {
-  const nameWithoutTimestamp = filename.replace(/^\d+-/, '');
-  const nameWithoutExtension = nameWithoutTimestamp.replace(/\.pdf$/, '');
+  const cleanName = cleanFileName(filename);
   
-  // Split by underscore or dash, take everything after company name
-  const parts = nameWithoutExtension.split(/[_-]/);
-  if (parts.length > 1) {
-    return parts.slice(1).join(' ')
-      .replace(/_/g, ' ')
+  // Get everything after the company name
+  const roleMatch = cleanName.match(/[^_\s-]+(?:[_\s-]+[^_\s-]+)*$/);
+  if (roleMatch) {
+    return roleMatch[0]
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
       .trim();
   }
   
-  return 'Unknown Role';
+  return 'Role Not Specified';
+}
+
+function formatStudentName(filename) {
+  return filename
+    .replace(/^\d+-/, '') // Remove timestamp
+    .replace(/\.pdf$/, '') // Remove .pdf extension
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/Resume/gi, '') // Remove "Resume" word
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
 }
 
 export async function processCompanyPDFs(directory) {
@@ -63,3 +76,5 @@ export async function processCompanyPDFs(directory) {
     return [];
   }
 }
+
+export { formatStudentName };

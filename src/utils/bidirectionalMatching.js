@@ -1,6 +1,6 @@
 import natural from 'natural';
 import { tokenizer } from './advancedExtraction.js';
-import path from 'path';
+import { formatStudentName } from './companyExtraction.js';
 
 export class BidirectionalMatcher {
   constructor(students, companies) {
@@ -135,8 +135,8 @@ export class BidirectionalMatcher {
 
         return {
           pdfName: company.pdfName || 'Unknown Document',
-          company_name: company.company_name || 'Unknown Company',
-          role: company.role || 'Unknown Role',
+          company_name: company.company_name || 'Company Not Found',
+          role: company.role || 'Role Not Specified',
           bidirectionalScore: score,
           details: {
             student: {
@@ -147,8 +147,11 @@ export class BidirectionalMatcher {
         };
       });
 
+      // Format student name properly
+      const formattedStudentName = formatStudentName(student.name);
+
       return {
-        student: student.name,
+        student: formattedStudentName,
         matches: matches.sort((a, b) => b.bidirectionalScore - a.bidirectionalScore)
       };
     });

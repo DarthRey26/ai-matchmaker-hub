@@ -20,16 +20,20 @@ export const DetailDialog = ({ match }) => {
             <div key={index} className="mb-6 p-4 border rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">{companyMatch.company_name || 'No Company Name'}</h3>
-                  {companyMatch.role && companyMatch.role !== 'Unknown Role' && (
-                    <p className="text-sm text-gray-500">{companyMatch.role}</p>
-                  )}
+                  <h3 className="text-lg font-semibold">
+                    {companyMatch.company_name !== 'Company Not Found' 
+                      ? companyMatch.company_name 
+                      : 'Company Name Not Available'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {companyMatch.role !== 'Role Not Specified' 
+                      ? companyMatch.role 
+                      : 'Role Not Specified'}
+                  </p>
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-bold">
-                    {companyMatch.probability ? 
-                      companyMatch.probability.toFixed(1) : 
-                      (companyMatch.bidirectionalScore * 100).toFixed(1)}%
+                    {(companyMatch.bidirectionalScore * 100).toFixed(1)}%
                   </span>
                   <p className="text-sm text-gray-500">Match Score</p>
                 </div>
@@ -39,14 +43,10 @@ export const DetailDialog = ({ match }) => {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Skills Match</span>
-                    <span>
-                      {companyMatch.qualityMetrics?.skillFit?.toFixed(1) || 
-                       companyMatch.details?.student?.skillMatch?.toFixed(1) || 0}%
-                    </span>
+                    <span>{companyMatch.details.student.skillMatch.toFixed(1)}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics?.skillFit || 
-                           companyMatch.details?.student?.skillMatch || 0}
+                    value={companyMatch.details.student.skillMatch}
                     className="h-2"
                   />
                 </div>
@@ -54,14 +54,10 @@ export const DetailDialog = ({ match }) => {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Experience Match</span>
-                    <span>
-                      {companyMatch.qualityMetrics?.experienceFit?.toFixed(1) || 
-                       companyMatch.details?.student?.experienceMatch?.toFixed(1) || 0}%
-                    </span>
+                    <span>{companyMatch.details.student.experienceMatch.toFixed(1)}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics?.experienceFit || 
-                           companyMatch.details?.student?.experienceMatch || 0}
+                    value={companyMatch.details.student.experienceMatch}
                     className="h-2"
                   />
                 </div>
@@ -69,37 +65,13 @@ export const DetailDialog = ({ match }) => {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="font-medium">Overall Quality</span>
-                    <span>
-                      {companyMatch.qualityMetrics?.overallQuality?.toFixed(1) || 
-                       (companyMatch.bidirectionalScore * 100).toFixed(1)}%
-                    </span>
+                    <span>{(companyMatch.bidirectionalScore * 100).toFixed(1)}%</span>
                   </div>
                   <Progress 
-                    value={companyMatch.qualityMetrics?.overallQuality || 
-                           companyMatch.bidirectionalScore * 100}
+                    value={companyMatch.bidirectionalScore * 100}
                     className="h-2"
                   />
                 </div>
-
-                {companyMatch.matchedSkills && companyMatch.matchedSkills.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Matched Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {companyMatch.matchedSkills.map((skill, idx) => (
-                        <Badge key={idx} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {companyMatch.role && companyMatch.role !== 'Unknown Role' && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium mb-2">Role Details</h4>
-                    <p className="text-sm text-gray-600">{companyMatch.role}</p>
-                  </div>
-                )}
               </div>
             </div>
           ))}
