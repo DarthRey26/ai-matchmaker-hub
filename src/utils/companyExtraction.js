@@ -14,7 +14,7 @@ function extractCompanyNameFromFilename(filename) {
   const cleanName = cleanFileName(filename);
   const parts = cleanName.split(/[_\s-]/);
   
-  // The company name is typically before the underscore or dash
+  // Assuming the company name is the first part of the filename
   if (parts[0]) {
     return parts[0]
       .replace(/([A-Z])/g, ' $1') // Add space before capital letters

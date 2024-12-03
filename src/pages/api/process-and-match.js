@@ -24,15 +24,15 @@ export default async function handler(req, res) {
     
     const formattedResults = {
       matches: matchingResults.map(result => ({
-        studentName: result.name,
+        studentName: result.student,
         matches: result.matches.slice(0, 2).map(match => ({
-          companyName: match.company,
-          probability: match.probability,
+          companyName: match.company_name || "No Company",
+          probability: (match.bidirectionalScore * 100).toFixed(2) + '%',
           status: 'Not Yet',
           qualityMetrics: {
-            skillFit: 0.8,
-            experienceFit: 0.7,
-            overallQuality: 0.75
+            skillFit: match.details.student.skillMatch.toFixed(2),
+            experienceFit: match.details.student.experienceMatch.toFixed(2),
+            overallQuality: (match.bidirectionalScore * 100).toFixed(2)
           }
         }))
       }))
