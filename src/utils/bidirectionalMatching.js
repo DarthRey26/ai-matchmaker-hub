@@ -28,7 +28,7 @@ export class BidirectionalMatcher {
         company.company_name ? company.company_name.repeat(3) : '',
         company.role ? company.role.repeat(2) : '',
         ...(Array.isArray(company.requirements) ? company.requirements : []),
-        ...(Array.isArray(company.job_descriptions) ? company.job_descriptions : [])
+        ...(Array.isArray(company.job_descriptions) ? company.job_descriptions.map(job => job.description || '') : [])
       ].join(' ').toLowerCase();
       this.tfidf.addDocument(companyDoc);
     });
@@ -143,11 +143,11 @@ export class BidirectionalMatcher {
               skillMatch: skillMatch * 100,
               experienceMatch: experienceMatch * 100
             }
-          },
-          filePath: company.filePath
+          }
         };
       });
 
+      // Format student name properly
       const formattedStudentName = formatStudentName(student.name);
 
       return {
