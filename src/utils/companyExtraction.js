@@ -1,52 +1,44 @@
 import * as fs from 'fs';
 import path from 'path';
 
-export function extractCompanyInfo(content) {
-  const info = {};
-  
-  // Extract company name
-  const companyNameMatch = content.match(/Company\s*Name\s*:\s*([^\n]+)/i);
-  info.company_name = companyNameMatch ? companyNameMatch[1].trim() : 'Company Name Not Found';
-  
-  // Extract role from Job Description
-  const jobDescriptionMatch = content.match(/Job\s*Description\s*\(?s?\)?:\s*([^]*?)(?=Internship\s*Requirement|$)/i);
-  if (jobDescriptionMatch) {
-    const jobDesc = jobDescriptionMatch[1].trim();
-    // Usually the role is mentioned in the first line or title
-    const firstLine = jobDesc.split('\n')[0];
-    info.role = firstLine.replace(/^\d+\.\s*/, '').trim() || 'Role Not Specified';
-  } else {
-    info.role = 'Role Not Specified';
-  }
-
-  // Extract other fields
-  const websiteMatch = content.match(/Company\s*Website\s*:\s*([^\n]+)/i);
-  info.website = websiteMatch ? websiteMatch[1].trim() : '';
-
-  const hoursMatch = content.match(/Hours\s*of\s*Work\s*:\s*([^\n]+)/i);
-  info.working_hours = hoursMatch ? hoursMatch[1].trim() : '';
-
-  const daysMatch = content.match(/Working\s*Days:\s*([^\n]+)/i);
-  info.working_days = daysMatch ? daysMatch[1].trim() : '';
-
-  const allowanceMatch = content.match(/Monthly\s*Allowance:\s*([^\n]+)/i);
-  info.monthly_allowance = allowanceMatch ? allowanceMatch[1].trim() : '';
-
-  // Extract requirements
-  const requirementsMatch = content.match(/Internship\s*Requirement\s*\(?s?\)?:\s*([^]*?)(?=\s*$)/i);
-  if (requirementsMatch) {
-    info.requirements = requirementsMatch[1]
-      .split(/[•\n]/)
-      .map(req => req.trim())
-      .filter(req => req.length > 0);
-  } else {
-    info.requirements = [];
-  }
-
-  return info;
+function cleanFileName(filename) {
+  // Remove timestamp prefix and file extension
+  return filename
+    .replace(/^\d+-/, '') // Remove timestamp
+    .replace(/\.pdf$/, '') // Remove .pdf extension
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .trim();
 }
 
-export function formatStudentName(filename) {
+function extractCompanyNameFromFilename(filename) {
+  const cleanName = cleanFileName(filename);
+  const parts = cleanName.split(/[_\s-]/);
+  
+  // Assuming the company name is the first part of the filename
+  if (parts[0]) {
+    return parts[0]
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .trim();
+  }
+  
+  return 'Unknown Company';
+}
+
+function extractRoleFromFilename(filename) {
+  const cleanName = cleanFileName(filename);
+  
+  // Get everything after the company name
+  const roleMatch = cleanName.match(/[^_\s-]+(?:[_\s-]+[^_\s-]+)*$/);
+  if (roleMatch) {
+    return roleMatch[0]
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .trim();
+  }
+  
+  return 'Role Not Specified';
+}
+
+function formatStudentName(filename) {
   return filename
     .replace(/^\d+-/, '') // Remove timestamp
     .replace(/\.pdf$/, '') // Remove .pdf extension
@@ -55,3 +47,34 @@ export function formatStudentName(filename) {
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
 }
+
+export async function processCompanyPDFs(directory) {
+  try {
+    const files = fs.readdirSync(directory);
+    const supportedFiles = files.filter(file => 
+      file.toLowerCase().endsWith('.pdf')
+    );
+
+    const allCompanies = [];
+
+    for (const file of supportedFiles) {
+      const companyName = extractCompanyNameFromFilename(file);
+      const role = extractRoleFromFilename(file);
+      
+      allCompanies.push({
+        company_name: companyName,
+        role: role,
+        pdfName: file,
+        requirements: [], // Will be populated by text extraction later
+        job_descriptions: [] // Will be populated by text extraction later
+      });
+    }
+
+    return allCompanies;
+  } catch (error) {
+    console.error('Error processing company documents:', error);
+    return [];
+  }
+}
+
+export { formatStudentName };
