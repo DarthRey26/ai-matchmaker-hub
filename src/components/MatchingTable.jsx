@@ -15,15 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
-const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
+const MatchingTable = ({ matchingData, onStatusChange }) => {
   const statusColors = {
     'Accepted': 'bg-green-100',
     'Rejected': 'bg-red-100',
@@ -31,7 +26,12 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
     'Not Yet': 'bg-purple-100'
   };
 
-  // Add validation check for matches
+  const handleViewPDF = (filePath) => {
+    // Using the existing uploads endpoint from the server
+    const pdfUrl = `http://localhost:3001${filePath.replace(/^backend/, '')}`;
+    window.open(pdfUrl, '_blank');
+  };
+
   const validMatchingData = matchingData.filter(student => 
     student.matches && student.matches.length >= 2
   );
@@ -42,30 +42,53 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
         <TableRow>
           <TableHead>Student Name</TableHead>
           <TableHead>Company 1</TableHead>
-          <TableHead>1st Outcome</TableHead>
+          <TableHead>Role</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead>Company 2</TableHead>
-          <TableHead>2nd Outcome</TableHead>
+          <TableHead>Role</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {validMatchingData.map((student, index) => (
           <TableRow key={index}>
-            <TableCell className="font-medium">{student.studentName}</TableCell>
-            {student.matches.map((match, idx) => (
+            <TableCell className="font-medium">
+              {student.studentName}
+              <div className="mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleViewPDF(student.filePath)}
+                >
+                  View Resume
+                </Button>
+              </div>
+            </TableCell>
+            {student.matches.slice(0, 2).map((match, idx) => (
               <React.Fragment key={idx}>
                 <TableCell>
-                  <div>{match?.company_name || 'No Company'}</div>
+                  <div>{match.company_name}</div>
                   <div className="text-sm text-gray-500">
-                    {match?.probability ? Number(match.probability).toFixed(2) : (match.bidirectionalScore * 100).toFixed(2)}%
+                    Match: {Number(match.bidirectionalScore * 100).toFixed(2)}%
+                  </div>
+                  <div className="mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewPDF(match.filePath)}
+                    >
+                      View Job Details
+                    </Button>
                   </div>
                 </TableCell>
+                <TableCell>{match.role}</TableCell>
                 <TableCell>
                   <Select
                     onValueChange={(value) => onStatusChange(student.studentName, idx === 0 ? 'outcome1' : 'outcome2', value)}
-                    defaultValue={match?.status || 'Not Yet'}
+                    defaultValue={match.status || 'Not Yet'}
                   >
-                    <SelectTrigger className={`w-[120px] ${statusColors[match?.status || 'Not Yet']}`}>
+                    <SelectTrigger className={`w-[120px] ${statusColors[match.status || 'Not Yet']}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -79,45 +102,9 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
               </React.Fragment>
             ))}
             <TableCell>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">View Details</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Match Quality Details - {student.studentName}</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-4">
-                      {student.matches.map((match, idx) => (
-                        <div key={idx} className="border rounded-lg p-4">
-                          <h4 className="font-semibold mb-2">{match?.company_name || 'No Company'}</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>Skills Fit:</span>
-                              <span className="font-medium">
-                                {Number(match?.details?.student?.skillMatch || 0).toFixed(2)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Experience Fit:</span>
-                              <span className="font-medium">
-                                {Number(match?.details?.student?.experienceMatch || 0).toFixed(2)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-semibold">
-                              <span>Overall Quality:</span>
-                              <span>
-                                {Number((match?.bidirectionalScore || 0) * 100).toFixed(2)}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button variant="outline" size="sm" onClick={() => toast.info("Detailed view coming soon!")}>
+                View Details
+              </Button>
             </TableCell>
           </TableRow>
         ))}
