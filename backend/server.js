@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import matchingRoutes from './routes/matchingRoutes.js';
+import openaiRoutes from './routes/openaiRoutes.js';  // Add this import
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
