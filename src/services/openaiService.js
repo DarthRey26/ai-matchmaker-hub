@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
-import { toast } from "sonner";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  dangerouslyAllowBrowser: false // Ensure API key is never exposed to the client
+  apiKey: process.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true // Only for development! In production, make API calls through your backend
 });
 
 export async function generateEmbeddings(text) {
@@ -15,7 +14,6 @@ export async function generateEmbeddings(text) {
     return response.data[0].embedding;
   } catch (error) {
     console.error('Error generating embeddings:', error);
-    toast.error('Failed to generate embeddings');
     throw error;
   }
 }
@@ -39,7 +37,6 @@ export async function generateMatchExplanation(student, company, matchScore) {
     return response.choices[0].message.content;
   } catch (error) {
     console.error('Error generating match explanation:', error);
-    toast.error('Failed to generate match explanation');
     throw error;
   }
 }
