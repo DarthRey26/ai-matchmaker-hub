@@ -1,70 +1,45 @@
 import OpenAI from 'openai';
+import { toast } from "sonner";
 
 const openai = new OpenAI({
-  apiKey: 'your_actual_api_key_here',
-  dangerouslyAllowBrowser: true
+  apiKey: process.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: false // Ensure API key is never exposed to the client
 });
 
-export const generateMatchingResults = async (students, companies) => {
+export async function generateEmbeddings(text) {
   try {
-    const prompt = `
-      Given these students with their skills and experiences:
-      ${JSON.stringify(students, null, 2)}
-      
-      And these companies with their requirements:
-      ${JSON.stringify(companies, null, 2)}
-      
-      Generate optimal matches between students and companies based on:
-      1. Skills match
-      2. Experience relevance
-      3. Company requirements fit
-      
-      For each student, provide:
-      - Top 2 company matches
-      - Match probability percentage
-      - Detailed quality metrics (skillFit, experienceFit, overallQuality)
-      
-      Format the response exactly like this example:
-      {
-        "matches": [
-          {
-            "studentName": "John Doe",
-            "matches": [
-              {
-                "companyName": "Company A",
-                "probability": 85.5,
-                "status": "Not Yet",
-                "qualityMetrics": {
-                  "skillFit": 90,
-                  "experienceFit": 85,
-                  "overallQuality": 87.5
-                }
-              }
-            ]
-          }
-        ]
-      }`;
+    const response = await openai.embeddings.create({
+      model: "text-embedding-ada-002",
+      input: text,
+    });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error('Error generating embeddings:', error);
+    toast.error('Failed to generate embeddings');
+    throw error;
+  }
+}
 
+export async function generateMatchExplanation(student, company, matchScore) {
+  try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are a professional AI recruiter that specializes in matching students to companies based on their skills, experience, and company requirements."
+          content: "You are an AI career advisor explaining why a student matches with a company."
         },
         {
           role: "user",
-          content: prompt
+          content: `Explain why ${student.name} matches with ${company.name} with a ${matchScore}% match score. Consider their skills and experience.`
         }
       ],
       temperature: 0.7,
-      max_tokens: 2000
     });
-
-    const result = JSON.parse(response.choices[0].message.content);
-    return result;
+    return response.choices[0].message.content;
   } catch (error) {
-    console.error('Error in OpenAI matching:', error);
+    console.error('Error generating match explanation:', error);
+    toast.error('Failed to generate match explanation');
     throw error;
   }
-};
+}

@@ -7,10 +7,7 @@ import multer from 'multer';
 import * as fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { processResumes, processCompanyPDFs } from '../src/utils/advancedExtraction.js';
-import { BidirectionalMatcher } from '../src/utils/bidirectionalMatching.js';
-import { addDocument } from './db.js';
-import openaiRoutes from './routes/openaiRoutes.js';
+import matchingRoutes from './routes/matchingRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +55,9 @@ const upload = multer({ storage: storage });
 
 // Add OpenAI routes
 app.use('/api/openai', openaiRoutes);
+
+// Add the new matching routes
+app.use('/api/matching', matchingRoutes);
 
 app.post('/api/upload-documents', (req, res, next) => {
   console.log('Received upload request');
@@ -190,50 +190,6 @@ app.get('/extracted-texts', async (req, res) => {
   } catch (error) {
     console.error('Error in /extracted-texts route:', error);
     res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/matching-data', async (req, res) => {
-  try {
-    const uploadsDir = path.join(__dirname, 'uploads');
-    const studentDir = path.join(uploadsDir, 'students');
-    const companyDir = path.join(uploadsDir, 'companies');
-
-    console.log('Processing resumes...');
-    const studentData = await processResumes(studentDir);
-    console.log('Student data:', JSON.stringify(studentData, null, 2));
-
-    console.log('Processing company data...');
-    const companyData = await processCompanyPDFs(companyDir);
-    console.log('Company data:', JSON.stringify(companyData, null, 2));
-
-    console.log('Matching students to companies...');
-    const bidirectionalMatcher = new BidirectionalMatcher(studentData, companyData);
-    const matchingResults = bidirectionalMatcher.generateMatchingMetrics();
-
-    console.log('Matching Results:', JSON.stringify(matchingResults, null, 2));
-
-    const formattedResults = {
-      matches: matchingResults.map(result => ({
-        studentName: result.student,
-        matches: result.matches.slice(0, 2).map(match => ({
-          companyName: match.pdfName,
-          role: match.role,
-          probability: Number((match.bidirectionalScore * 100).toFixed(2)),
-          status: 'Not Yet',
-          qualityMetrics: {
-            skillFit: Number((match.details.student.skillMatch).toFixed(2)),
-            experienceFit: Number((match.details.student.experienceMatch).toFixed(2)),
-            overallQuality: Number((match.bidirectionalScore * 100).toFixed(2))
-          }
-        }))
-      })).filter(result => result.matches.length > 0)
-    };
-
-    res.json(formattedResults);
-  } catch (error) {
-    console.error('Error processing and matching:', error);
-    res.status(500).json({ error: error.message || 'Failed to process and match data' });
   }
 });
 
