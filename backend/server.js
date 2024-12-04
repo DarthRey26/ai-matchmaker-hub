@@ -287,3 +287,7 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/student', express.static(path.join(__dirname, 'uploads', 'students')));
 app.use('/uploads/company', express.static(path.join(__dirname, 'uploads', 'companies')));
+
+function logExtraction(info) {
+  console.log('Extracted Company Info:', info);
+}

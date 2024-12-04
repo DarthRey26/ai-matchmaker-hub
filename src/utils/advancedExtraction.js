@@ -53,7 +53,7 @@ export async function extractTextFromPDF(pdfPath) {
 }
 
 function cleanText(text) {
-    return text.replace(/[^a-zA-Z\s]/g, '').toLowerCase().trim();
+    return text.trim().replace(/\s+/g, ' ');
 }
 
 function extractSkills(text) {
