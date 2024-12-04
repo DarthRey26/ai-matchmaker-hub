@@ -1,7 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
@@ -39,7 +38,7 @@ export async function generateMatchExplanation(student, company, matchScore) {
         },
         {
           role: "user",
-          content: `Explain why ${student.name} matches with ${company.name} with a ${matchScore}% match score. Consider their skills and experience.`
+          content: `Explain why ${student.name} matches with ${company.company_name} with a ${matchScore}% match score. Consider their skills and experience.`
         }
       ],
       temperature: 0.7,
@@ -63,7 +62,7 @@ export async function generateMatchingResults(studentData, companyData) {
         const explanation = await generateMatchExplanation(student, company, similarity * 100);
         
         return {
-          company_name: company.name,
+          company_name: company.company_name,
           similarity_score: similarity,
           explanation
         };
