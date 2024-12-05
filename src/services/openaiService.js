@@ -4,8 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
-  organization: "org-YourOrgID", // Add your organization ID if you have one
+  apiKey: process.env.VITE_OPENAI_API_KEY || "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",
   dangerouslyAllowBrowser: true
 });
 
@@ -27,7 +26,7 @@ export async function generateMatchExplanation(student, company, matchScore) {
   try {
     console.log('Generating match explanation for:', { student: student.name, company: company.company_name });
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",  // Updated to use the correct model
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
