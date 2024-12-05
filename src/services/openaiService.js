@@ -3,19 +3,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
-
-if (!apiKey) {
-  throw new Error('OpenAI API key is missing. Please check your environment variables.');
-}
-
 const openai = new OpenAI({
-  apiKey: apiKey,
+  apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
 export async function generateEmbeddings(text) {
   try {
+    console.log('Generating embeddings for text:', text.substring(0, 100) + '...');
     const response = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: text,
@@ -29,6 +24,7 @@ export async function generateEmbeddings(text) {
 
 export async function generateMatchExplanation(student, company, matchScore) {
   try {
+    console.log('Generating match explanation for:', { student: student.name, company: company.company_name });
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -51,12 +47,16 @@ export async function generateMatchExplanation(student, company, matchScore) {
 }
 
 export async function generateMatchingResults(studentData, companyData) {
+  console.log('Starting matching process...');
   const matches = [];
   
   for (const student of studentData) {
+    console.log('Processing student:', student.name);
     const studentEmbedding = await generateEmbeddings(JSON.stringify(student));
+    
     const companyMatches = await Promise.all(
       companyData.map(async (company) => {
+        console.log('Matching with company:', company.company_name);
         const companyEmbedding = await generateEmbeddings(JSON.stringify(company));
         const similarity = calculateCosineSimilarity(studentEmbedding, companyEmbedding);
         const explanation = await generateMatchExplanation(student, company, similarity * 100);

@@ -1,7 +1,9 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import nlp from 'compromise';
+import { configurePDFWorker } from './pdfConfig';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.createWorkerURL();
+// Initialize PDF.js configuration
+configurePDFWorker();
 
 export async function extractTextFromPDF(file) {
   try {
@@ -26,11 +28,11 @@ export async function extractTextFromPDF(file) {
 }
 
 export async function extractStudentData(file) {
-  const text = await extractTextFromPDF(file.path);
+  const text = await extractTextFromPDF(file);
   return extractEntities(text, file.name);
 }
 
 export async function extractCompanyData(file) {
-  const text = await extractTextFromPDF(file.path);
+  const text = await extractTextFromPDF(file);
   return extractDataFromText(text);
 }
