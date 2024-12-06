@@ -1,7 +1,4 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const API_KEY = "sk-svcacct-kDvOwgXZJdqtNOXVHDZlx5QM-tGOz-RtMawF_rrQUbw8GpwcnHYZjqHSLXMRuxbCzQrPXguaY9kJwT3BlbkFJ5UH7j_TNelMAU1faa0l2wTSfJ4fRBfLNBO4JoZD9UtT8SX55LCHmhAdCRJod7O8wITm6GfwJC7_AA";
 
@@ -46,4 +43,60 @@ export async function generateMatchExplanation(student, company, matchScore) {
     console.error('Error generating match explanation:', error);
     throw error;
   }
+}
+
+export async function generateMatchingResults(studentData, companyData) {
+  try {
+    const results = [];
+    
+    for (const student of studentData) {
+      const studentMatches = [];
+      
+      for (const company of companyData) {
+        // Generate embeddings for student and company profiles
+        const studentText = `${student.name} ${student.skills.join(' ')} ${student.experience.join(' ')}`;
+        const companyText = `${company.company_name} ${company.requirements.join(' ')} ${company.job_descriptions.join(' ')}`;
+        
+        const studentEmbedding = await generateEmbeddings(studentText);
+        const companyEmbedding = await generateEmbeddings(companyText);
+        
+        // Calculate similarity score
+        const similarity = cosineSimilarity(studentEmbedding, companyEmbedding);
+        const matchScore = similarity * 100;
+        
+        // Generate explanation for the match
+        const explanation = await generateMatchExplanation(student, company, matchScore);
+        
+        studentMatches.push({
+          company_name: company.company_name,
+          matchScore,
+          explanation,
+          requirements: company.requirements,
+          jobDescriptions: company.job_descriptions
+        });
+      }
+      
+      // Sort matches by score and take top 3
+      const topMatches = studentMatches
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 3);
+      
+      results.push({
+        student: student.name,
+        matches: topMatches
+      });
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error generating matching results:', error);
+    throw error;
+  }
+}
+
+function cosineSimilarity(vecA, vecB) {
+  const dotProduct = vecA.reduce((acc, val, i) => acc + val * vecB[i], 0);
+  const normA = Math.sqrt(vecA.reduce((acc, val) => acc + val * val, 0));
+  const normB = Math.sqrt(vecB.reduce((acc, val) => acc + val * val, 0));
+  return dotProduct / (normA * normB);
 }
