@@ -3,8 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const API_KEY = "sk-svcacct-kDvOwgXZJdqtNOXVHDZlx5QM-tGOz-RtMawF_rrQUbw8GpwcnHYZjqHSLXMRuxbCzQrPXguaY9kJwT3BlbkFJ5UH7j_TNelMAU1faa0l2wTSfJ4fRBfLNBO4JoZD9UtT8SX55LCHmhAdCRJod7O8wITm6GfwJC7_AA";
+
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY || "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",
+  apiKey: API_KEY,
   dangerouslyAllowBrowser: true
 });
 
@@ -44,43 +46,4 @@ export async function generateMatchExplanation(student, company, matchScore) {
     console.error('Error generating match explanation:', error);
     throw error;
   }
-}
-
-export async function generateMatchingResults(studentData, companyData) {
-  console.log('Starting matching process...');
-  const matches = [];
-  
-  for (const student of studentData) {
-    console.log('Processing student:', student.name);
-    const studentEmbedding = await generateEmbeddings(JSON.stringify(student));
-    
-    const companyMatches = await Promise.all(
-      companyData.map(async (company) => {
-        console.log('Matching with company:', company.company_name);
-        const companyEmbedding = await generateEmbeddings(JSON.stringify(company));
-        const similarity = calculateCosineSimilarity(studentEmbedding, companyEmbedding);
-        const explanation = await generateMatchExplanation(student, company, similarity * 100);
-        
-        return {
-          company_name: company.company_name,
-          similarity_score: similarity,
-          explanation
-        };
-      })
-    );
-    
-    matches.push({
-      student_name: student.name,
-      matches: companyMatches.sort((a, b) => b.similarity_score - a.similarity_score)
-    });
-  }
-  
-  return matches;
-}
-
-function calculateCosineSimilarity(vecA, vecB) {
-  const dotProduct = vecA.reduce((acc, val, i) => acc + val * vecB[i], 0);
-  const normA = Math.sqrt(vecA.reduce((acc, val) => acc + val * val, 0));
-  const normB = Math.sqrt(vecB.reduce((acc, val) => acc + val * val, 0));
-  return dotProduct / (normA * normB);
 }

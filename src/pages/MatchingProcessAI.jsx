@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Sidebar from '../components/Sidebar';
 import { generateCSV, downloadCSV } from '../utils/csvUtils';
-import MatchingTable from '../components/MatchingTable';
-import { Progress } from "@/components/ui/progress";
+import MatchingResults from '../components/MatchingResults';
 import { toast } from "sonner";
 
 const MatchingProcessAI = () => {
@@ -56,21 +55,10 @@ const MatchingProcessAI = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-full max-w-md">
-                    <div className="mb-4 text-center text-gray-600">
-                      Processing AI-Powered Student-Company Matches...
-                    </div>
-                    <Progress value={75} className="w-full" />
-                  </div>
-                </div>
-              ) : (
-                <MatchingTable 
-                  matchingData={matchingData}
-                  onStatusChange={() => {}}
-                />
-              )}
+              <MatchingResults 
+                matchingData={matchingData}
+                isLoading={isLoading}
+              />
             </CardContent>
           </Card>
         </div>
