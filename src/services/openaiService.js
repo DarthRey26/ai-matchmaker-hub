@@ -53,36 +53,32 @@ export async function generateMatchingResults(studentData, companyData) {
       const studentMatches = [];
       
       for (const company of companyData) {
-        // Generate embeddings for student and company profiles
-        const studentText = `${student.name} ${student.skills.join(' ')} ${student.experience.join(' ')}`;
-        const companyText = `${company.company_name} ${company.requirements.join(' ')} ${company.job_descriptions.join(' ')}`;
+        const studentText = `${student.name || ''} ${(student.skills || []).join(' ')} ${(student.experience || []).join(' ')}`;
+        const companyText = `${company.company_name || ''} ${(company.requirements || []).join(' ')} ${(company.job_descriptions || []).map(job => job.description || '').join(' ')}`;
         
         const studentEmbedding = await generateEmbeddings(studentText);
         const companyEmbedding = await generateEmbeddings(companyText);
         
-        // Calculate similarity score
         const similarity = cosineSimilarity(studentEmbedding, companyEmbedding);
         const matchScore = similarity * 100;
         
-        // Generate explanation for the match
         const explanation = await generateMatchExplanation(student, company, matchScore);
         
         studentMatches.push({
-          company_name: company.company_name,
+          company_name: company.company_name || 'Unknown Company',
           matchScore,
           explanation,
-          requirements: company.requirements,
-          jobDescriptions: company.job_descriptions
+          requirements: company.requirements || [],
+          jobDescriptions: company.job_descriptions || []
         });
       }
       
-      // Sort matches by score and take top 3
       const topMatches = studentMatches
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, 3);
       
       results.push({
-        student: student.name,
+        student: student.name || 'Unknown Student',
         matches: topMatches
       });
     }
