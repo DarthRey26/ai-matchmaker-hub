@@ -1,6 +1,7 @@
 import express from 'express';
-import { generateEmbeddings, generateMatchExplanation } from '../../src/services/openaiService.js';
+import { generateEmbeddings, generateMatchExplanation, extractDocumentInfo } from '../../src/services/openaiService.js';
 import { processResumes, processCompanyPDFs } from '../../src/utils/advancedExtraction.js';
+import { matchStudentsToCompanies } from '../../src/utils/matchingAlgorithm.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -18,62 +19,83 @@ function cosineSimilarity(vecA, vecB) {
 
 router.get('/enhanced-matching', async (req, res) => {
   try {
+    const { matchingType } = req.query;
     const uploadsDir = path.join(__dirname, '..', 'uploads');
     const studentDir = path.join(uploadsDir, 'students');
     const companyDir = path.join(uploadsDir, 'companies');
 
-    console.log('Processing resumes and company data...');
-    const studentData = await processResumes(studentDir);
-    const companyData = await processCompanyPDFs(companyDir);
+    if (matchingType === 'iris-stacked') {
+      // OpenAI-powered matching
+      console.log('Processing resumes and company data with OpenAI...');
+      const studentData = await processResumes(studentDir);
+      const companyData = await processCompanyPDFs(companyDir);
 
-    const enhancedMatches = [];
-    const processedStudents = new Set();
+      const enhancedMatches = [];
 
-    for (const student of studentData) {
-      if (processedStudents.has(student.name)) continue;
-      processedStudents.add(student.name);
+      for (const student of studentData) {
+        const studentName = student.name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Student';
+        const studentText = `${studentName} ${(student.skills || []).join(' ')} ${(student.experience || []).map(exp => (exp.job_titles || []).join(' ')).join(' ')}`;
+        
+        const studentEmbedding = await generateEmbeddings(studentText);
+        const companyMatches = await Promise.all(companyData.map(async (company) => {
+          const companyName = company.company_name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Company';
+          const companyText = `${companyName} ${(company.requirements || []).join(' ')} ${(company.job_descriptions || []).map(job => job.description || '').join(' ')}`;
+          const companyEmbedding = await generateEmbeddings(companyText);
 
-      const studentName = student.name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Student';
-      const studentText = `${studentName} ${(student.skills || []).join(' ')} ${(student.experience || []).map(exp => (exp.job_titles || []).join(' ')).join(' ')}`;
-      console.log('Processing student:', studentName);
-      
-      const studentEmbedding = await generateEmbeddings(studentText);
-      const companyMatches = await Promise.all(companyData.map(async (company) => {
-        const companyName = company.company_name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Company';
-        const companyText = `${companyName} ${(company.requirements || []).join(' ')} ${(company.job_descriptions || []).map(job => job.description || '').join(' ')}`;
-        const companyEmbedding = await generateEmbeddings(companyText);
+          const similarity = cosineSimilarity(studentEmbedding, companyEmbedding);
+          const matchScore = similarity * 100;
 
-        const similarity = cosineSimilarity(studentEmbedding, companyEmbedding);
-        const matchScore = similarity * 100;
-
-        const explanation = await generateMatchExplanation(
-          { name: studentName, ...student },
-          { company_name: companyName, ...company },
-          matchScore
-        );
-
-        return {
-          company_name: companyName,
-          role: company.role || 'Position Available',
-          matchScore,
-          explanation,
-          details: {
-            requirements: company.requirements || [],
-            jobDescriptions: company.job_descriptions || []
+          // Only include matches with a score above 40%
+          if (matchScore < 40) {
+            return null;
           }
-        };
-      }));
 
-      enhancedMatches.push({
-        student: studentName,
-        matches: companyMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, 3)
-      });
+          const explanation = await generateMatchExplanation(
+            { name: studentName, ...student },
+            { company_name: companyName, ...company },
+            matchScore
+          );
+
+          return {
+            company_name: companyName,
+            role: company.role || 'Position Available',
+            matchScore,
+            explanation,
+            details: {
+              requirements: company.requirements || [],
+              jobDescriptions: company.job_descriptions || []
+            }
+          };
+        }));
+
+        const validMatches = companyMatches.filter(match => match !== null);
+        
+        enhancedMatches.push({
+          student: studentName,
+          matches: validMatches.length > 0 
+            ? validMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, 3)
+            : [{ 
+                company_name: "No Matches Found",
+                matchScore: 0,
+                explanation: "No suitable matches were found based on the student's profile and available positions.",
+                details: {
+                  requirements: [],
+                  jobDescriptions: []
+                }
+              }]
+        });
+      }
+
+      res.json({ matches: enhancedMatches });
+    } else {
+      // Use traditional bidirectional matching
+      const studentData = await processResumes(studentDir);
+      const companyData = await processCompanyPDFs(companyDir);
+      const matches = matchStudentsToCompanies(studentData, companyData);
+      res.json({ matches });
     }
-
-    console.log('Matching process completed');
-    res.json({ matches: enhancedMatches });
   } catch (error) {
-    console.error('Error in enhanced matching:', error);
+    console.error('Error in matching:', error);
     res.status(500).json({ error: error.message });
   }
 });
