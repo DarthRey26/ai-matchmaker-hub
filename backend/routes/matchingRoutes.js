@@ -22,26 +22,38 @@ router.get('/enhanced-matching', async (req, res) => {
     const studentDir = path.join(uploadsDir, 'students');
     const companyDir = path.join(uploadsDir, 'companies');
 
+    console.log('Processing resumes and company data...');
     const studentData = await processResumes(studentDir);
     const companyData = await processCompanyPDFs(companyDir);
 
     const enhancedMatches = [];
+    const processedStudents = new Set();
 
     for (const student of studentData) {
-      const studentText = `${student.name || ''} ${(student.skills || []).join(' ')} ${(student.experience || []).map(exp => (exp.job_titles || []).join(' ')).join(' ')}`;
-      const studentEmbedding = await generateEmbeddings(studentText);
+      if (processedStudents.has(student.name)) continue;
+      processedStudents.add(student.name);
 
+      const studentName = student.name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Student';
+      const studentText = `${studentName} ${(student.skills || []).join(' ')} ${(student.experience || []).map(exp => (exp.job_titles || []).join(' ')).join(' ')}`;
+      console.log('Processing student:', studentName);
+      
+      const studentEmbedding = await generateEmbeddings(studentText);
       const companyMatches = await Promise.all(companyData.map(async (company) => {
-        const companyText = `${company.company_name || ''} ${(company.requirements || []).join(' ')} ${(company.job_descriptions || []).map(job => job.description || '').join(' ')}`;
+        const companyName = company.company_name?.replace(/^\d+-/, '').replace(/_/g, ' ').replace(/\.pdf$/, '') || 'Unknown Company';
+        const companyText = `${companyName} ${(company.requirements || []).join(' ')} ${(company.job_descriptions || []).map(job => job.description || '').join(' ')}`;
         const companyEmbedding = await generateEmbeddings(companyText);
 
         const similarity = cosineSimilarity(studentEmbedding, companyEmbedding);
         const matchScore = similarity * 100;
 
-        const explanation = await generateMatchExplanation(student, company, matchScore);
+        const explanation = await generateMatchExplanation(
+          { name: studentName, ...student },
+          { company_name: companyName, ...company },
+          matchScore
+        );
 
         return {
-          company_name: company.company_name || 'Unknown Company',
+          company_name: companyName,
           role: company.role || 'Position Available',
           matchScore,
           explanation,
@@ -53,11 +65,12 @@ router.get('/enhanced-matching', async (req, res) => {
       }));
 
       enhancedMatches.push({
-        student: student.name || 'Unknown Student',
+        student: studentName,
         matches: companyMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, 3)
       });
     }
 
+    console.log('Matching process completed');
     res.json({ matches: enhancedMatches });
   } catch (error) {
     console.error('Error in enhanced matching:', error);

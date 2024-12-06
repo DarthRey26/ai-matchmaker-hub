@@ -22,8 +22,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
+const MatchingTable = ({ matchingData, onStatusChange }) => {
   const statusColors = {
     'Accepted': 'bg-green-100',
     'Rejected': 'bg-red-100',
@@ -31,10 +33,14 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
     'Not Yet': 'bg-purple-100'
   };
 
-  // Add validation check for matches
-  const validMatchingData = matchingData.filter(student => 
-    student.matches && student.matches.length >= 2
-  );
+  const formatName = (name) => {
+    return name
+      .replace(/^\d+-/, '')
+      .replace(/_/g, ' ')
+      .replace(/\.pdf$/, '')
+      .replace(/Resume/gi, '')
+      .trim();
+  };
 
   return (
     <Table>
@@ -45,27 +51,33 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
           <TableHead>1st Outcome</TableHead>
           <TableHead>Company 2</TableHead>
           <TableHead>2nd Outcome</TableHead>
+          <TableHead>Company 3</TableHead>
+          <TableHead>3rd Outcome</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {validMatchingData.map((student, index) => (
+        {matchingData.map((match, index) => (
           <TableRow key={index}>
-            <TableCell className="font-medium">{student.studentName}</TableCell>
-            {student.matches.map((match, idx) => (
+            <TableCell className="font-medium">
+              {formatName(match.student)}
+            </TableCell>
+            {match.matches.map((companyMatch, idx) => (
               <React.Fragment key={idx}>
                 <TableCell>
-                  <div>{match?.company_name || 'No Company'}</div>
-                  <div className="text-sm text-gray-500">
-                    {match?.probability ? Number(match.probability).toFixed(2) : (match.bidirectionalScore * 100).toFixed(2)}%
+                  <div className="flex flex-col">
+                    <span className="font-medium">{formatName(companyMatch.company_name)}</span>
+                    <span className="text-sm text-gray-500">
+                      {companyMatch.matchScore.toFixed(1)}%
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Select
-                    onValueChange={(value) => onStatusChange(student.studentName, idx === 0 ? 'outcome1' : 'outcome2', value)}
-                    defaultValue={match?.status || 'Not Yet'}
+                    onValueChange={(value) => onStatusChange(match.student, idx === 0 ? 'outcome1' : 'outcome2', value)}
+                    defaultValue="Not Yet"
                   >
-                    <SelectTrigger className={`w-[120px] ${statusColors[match?.status || 'Not Yet']}`}>
+                    <SelectTrigger className={`w-[120px] ${statusColors['Not Yet']}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -83,39 +95,37 @@ const MatchingTable = ({ matchingData, onStatusChange, accuracyReport }) => {
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">View Details</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="max-w-3xl">
                   <DialogHeader>
-                    <DialogTitle>Match Quality Details - {student.studentName}</DialogTitle>
+                    <DialogTitle>Match Details for {formatName(match.student)}</DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-4">
-                      {student.matches.map((match, idx) => (
-                        <div key={idx} className="border rounded-lg p-4">
-                          <h4 className="font-semibold mb-2">{match?.company_name || 'No Company'}</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>Skills Fit:</span>
-                              <span className="font-medium">
-                                {Number(match?.details?.student?.skillMatch || 0).toFixed(2)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Experience Fit:</span>
-                              <span className="font-medium">
-                                {Number(match?.details?.student?.experienceMatch || 0).toFixed(2)}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between font-semibold">
-                              <span>Overall Quality:</span>
-                              <span>
-                                {Number((match?.bidirectionalScore || 0) * 100).toFixed(2)}%
-                              </span>
-                            </div>
+                  <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                    {match.matches.map((companyMatch, idx) => (
+                      <div key={idx} className="mb-6 p-4 border rounded-lg">
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold">
+                              {formatName(companyMatch.company_name)}
+                            </h3>
+                            <p className="text-sm text-gray-500">{companyMatch.role}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xl font-bold">
+                              {companyMatch.matchScore.toFixed(1)}%
+                            </span>
+                            <p className="text-sm text-gray-500">Match Score</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2">Match Explanation</h4>
+                          <p className="text-sm text-gray-600">{companyMatch.explanation}</p>
+                        </div>
+                        <div className="mt-4">
+                          <Progress value={companyMatch.matchScore} className="h-2" />
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
                 </DialogContent>
               </Dialog>
             </TableCell>
