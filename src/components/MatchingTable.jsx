@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 
 const MatchingTable = ({ matchingData, isLoading }) => {
+  console.log('Matching Data received:', matchingData);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -38,6 +40,12 @@ const MatchingTable = ({ matchingData, isLoading }) => {
     );
   }
 
+  const getMatchColor = (score) => {
+    if (score >= 80) return "success";
+    if (score >= 60) return "warning";
+    return "secondary";
+  };
+
   const formatName = (name) => {
     if (!name) return 'Unknown';
     return name
@@ -52,9 +60,9 @@ const MatchingTable = ({ matchingData, isLoading }) => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Student Name</TableHead>
+          <TableHead className="w-[200px]">Student Name</TableHead>
           <TableHead>Top Matches</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="w-[150px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -64,17 +72,24 @@ const MatchingTable = ({ matchingData, isLoading }) => {
               {formatName(match.student)}
             </TableCell>
             <TableCell>
-              <div className="space-y-2">
-                {match.matches.map((companyMatch, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <span>{formatName(companyMatch.company_name)}</span>
-                    {companyMatch.matchScore && (
-                      <Badge variant={companyMatch.matchScore >= 70 ? "success" : "secondary"}>
-                        {companyMatch.matchScore.toFixed(1)}%
-                      </Badge>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {match.matches && match.matches.length > 0 ? (
+                  match.matches.map((companyMatch, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{formatName(companyMatch.company_name)}</span>
+                        <span className="text-sm text-gray-500">{companyMatch.role || 'Role not specified'}</span>
+                      </div>
+                      {companyMatch.matchScore && (
+                        <Badge variant={getMatchColor(companyMatch.matchScore)}>
+                          {companyMatch.matchScore.toFixed(1)}% Match
+                        </Badge>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500">No suitable matches found</div>
+                )}
               </div>
             </TableCell>
             <TableCell>
@@ -86,66 +101,91 @@ const MatchingTable = ({ matchingData, isLoading }) => {
                   <DialogHeader>
                     <DialogTitle>Match Details for {formatName(match.student)}</DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                    {match.matches.map((companyMatch, idx) => (
-                      <div key={idx} className="mb-6 p-4 border rounded-lg">
+                  <ScrollArea className="h-[600px] w-full rounded-md border p-4">
+                    {match.matches && match.matches.map((companyMatch, idx) => (
+                      <div key={idx} className="mb-8 p-6 border rounded-lg bg-white shadow-sm">
                         <div className="flex justify-between items-center mb-4">
                           <div>
-                            <h3 className="text-lg font-semibold">
+                            <h3 className="text-xl font-semibold">
                               {formatName(companyMatch.company_name)}
                             </h3>
                             {companyMatch.role && (
-                              <p className="text-sm text-gray-500">{companyMatch.role}</p>
+                              <p className="text-gray-600">{companyMatch.role}</p>
                             )}
                           </div>
                           {companyMatch.matchScore && (
                             <div className="text-right">
-                              <span className="text-xl font-bold">
+                              <Badge variant={getMatchColor(companyMatch.matchScore)} className="text-lg px-3 py-1">
                                 {companyMatch.matchScore.toFixed(1)}%
-                              </span>
+                              </Badge>
+                              <p className="text-sm text-gray-500 mt-1">Match Score</p>
                             </div>
                           )}
                         </div>
 
-                        {companyMatch.matchScore && (
-                          <Progress 
-                            value={companyMatch.matchScore} 
-                            className="mb-4"
-                          />
-                        )}
+                        <div className="space-y-4 mb-6">
+                          <div>
+                            <h4 className="font-medium mb-2">Skills Match</h4>
+                            <Progress 
+                              value={companyMatch.skillsMatch || 0} 
+                              className="h-2"
+                            />
+                            <p className="text-sm text-gray-600 mt-1">
+                              {companyMatch.skillsMatch?.toFixed(1)}% of required skills matched
+                            </p>
+                          </div>
 
-                        {companyMatch.explanation && (
-                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium mb-2">Match Analysis</h4>
-                            <p className="text-sm text-gray-600">
-                              {companyMatch.explanation}
+                          <div>
+                            <h4 className="font-medium mb-2">Experience Match</h4>
+                            <Progress 
+                              value={companyMatch.experienceMatch || 0} 
+                              className="h-2"
+                            />
+                            <p className="text-sm text-gray-600 mt-1">
+                              {companyMatch.experienceMatch?.toFixed(1)}% experience relevance
+                            </p>
+                          </div>
+                        </div>
+
+                        {companyMatch.matchExplanation && (
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-medium mb-2 text-blue-700">Match Analysis</h4>
+                            <p className="text-sm text-blue-600">
+                              {companyMatch.matchExplanation}
                             </p>
                           </div>
                         )}
 
-                        {companyMatch.details && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Position Details</h4>
-                            {companyMatch.details.requirements?.length > 0 && (
-                              <div className="mb-4">
-                                <h5 className="text-sm font-medium text-gray-600 mb-2">Requirements</h5>
-                                <ul className="list-disc list-inside text-sm text-gray-600">
-                                  {companyMatch.details.requirements.map((req, i) => (
-                                    <li key={i}>{req}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {companyMatch.details.jobDescriptions?.length > 0 && (
-                              <div>
-                                <h5 className="text-sm font-medium text-gray-600 mb-2">Job Description</h5>
-                                <ul className="list-disc list-inside text-sm text-gray-600">
-                                  {companyMatch.details.jobDescriptions.map((desc, i) => (
-                                    <li key={i}>{desc.description}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                        {companyMatch.requirements && companyMatch.requirements.length > 0 && (
+                          <div className="mt-6">
+                            <h4 className="font-medium mb-2">Company Requirements</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {companyMatch.requirements.map((req, i) => (
+                                <li key={i} className="text-sm text-gray-600">{req}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {companyMatch.studentStrengths && (
+                          <div className="mt-6">
+                            <h4 className="font-medium mb-2">Student Strengths</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {companyMatch.studentStrengths.map((strength, i) => (
+                                <li key={i} className="text-sm text-gray-600">{strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {companyMatch.improvementAreas && (
+                          <div className="mt-6">
+                            <h4 className="font-medium mb-2">Areas for Improvement</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {companyMatch.improvementAreas.map((area, i) => (
+                                <li key={i} className="text-sm text-gray-600">{area}</li>
+                              ))}
+                            </ul>
                           </div>
                         )}
                       </div>
