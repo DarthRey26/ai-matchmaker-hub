@@ -115,3 +115,59 @@ export async function calculateMatchScore(studentInfo, companyInfo) {
     return null;
   }
 }
+
+export async function generateMatchingResults(studentData, companyData) {
+  console.log('Starting matching process with:', {
+    students: studentData.length,
+    companies: companyData.length
+  });
+
+  const matches = [];
+
+  for (const student of studentData) {
+    console.log(`Processing student: ${student.name}`);
+    const studentMatches = [];
+
+    for (const company of companyData) {
+      console.log(`Evaluating match with company: ${company.company_name}`);
+      
+      try {
+        const matchScore = await calculateMatchScore(student, company);
+        
+        if (matchScore && matchScore.overall >= 40) {
+          const explanation = await generateMatchExplanation(student, company);
+          
+          studentMatches.push({
+            company_name: company.company_name,
+            role: company.role || 'Role not specified',
+            matchScore: matchScore.overall,
+            skillsMatch: matchScore.skills || 0,
+            experienceMatch: matchScore.experience || 0,
+            explanation: explanation,
+            requirements: company.requirements || [],
+            strengths: matchScore.strengths || [],
+            improvements: matchScore.improvements || []
+          });
+        }
+      } catch (error) {
+        console.error('Error processing match:', error);
+        continue;
+      }
+    }
+
+    // Sort matches by score in descending order
+    studentMatches.sort((a, b) => b.matchScore - a.matchScore);
+
+    matches.push({
+      student: student.name,
+      matches: studentMatches.length > 0 ? studentMatches : [{
+        company_name: "No Matches Found",
+        matchScore: 0,
+        explanation: "No suitable matches were found based on the current criteria."
+      }]
+    });
+  }
+
+  console.log('Completed matching process:', matches);
+  return matches;
+}
