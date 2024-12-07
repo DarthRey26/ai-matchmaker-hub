@@ -9,13 +9,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -24,16 +17,29 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
-const MatchingTable = ({ matchingData, onStatusChange }) => {
-  const statusColors = {
-    'Accepted': 'bg-green-100',
-    'Rejected': 'bg-red-100',
-    'Pending': 'bg-yellow-100',
-    'Not Yet': 'bg-purple-100'
-  };
+const MatchingTable = ({ matchingData, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Processing matches...</span>
+      </div>
+    );
+  }
+
+  if (!matchingData || matchingData.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-gray-500">No matching data available</p>
+      </div>
+    );
+  }
 
   const formatName = (name) => {
+    if (!name) return 'Unknown';
     return name
       .replace(/^\d+-/, '')
       .replace(/_/g, ' ')
@@ -47,12 +53,7 @@ const MatchingTable = ({ matchingData, onStatusChange }) => {
       <TableHeader>
         <TableRow>
           <TableHead>Student Name</TableHead>
-          <TableHead>Company 1</TableHead>
-          <TableHead>1st Outcome</TableHead>
-          <TableHead>Company 2</TableHead>
-          <TableHead>2nd Outcome</TableHead>
-          <TableHead>Company 3</TableHead>
-          <TableHead>3rd Outcome</TableHead>
+          <TableHead>Top Matches</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -62,34 +63,20 @@ const MatchingTable = ({ matchingData, onStatusChange }) => {
             <TableCell className="font-medium">
               {formatName(match.student)}
             </TableCell>
-            {match.matches.map((companyMatch, idx) => (
-              <React.Fragment key={idx}>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{formatName(companyMatch.company_name)}</span>
-                    <span className="text-sm text-gray-500">
-                      {companyMatch.matchScore.toFixed(1)}%
-                    </span>
+            <TableCell>
+              <div className="space-y-2">
+                {match.matches.map((companyMatch, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span>{formatName(companyMatch.company_name)}</span>
+                    {companyMatch.matchScore && (
+                      <Badge variant={companyMatch.matchScore >= 70 ? "success" : "secondary"}>
+                        {companyMatch.matchScore.toFixed(1)}%
+                      </Badge>
+                    )}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    onValueChange={(value) => onStatusChange(match.student, idx === 0 ? 'outcome1' : 'outcome2', value)}
-                    defaultValue="Not Yet"
-                  >
-                    <SelectTrigger className={`w-[120px] ${statusColors['Not Yet']}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Accepted">Accepted</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Not Yet">Not Yet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-              </React.Fragment>
-            ))}
+                ))}
+              </div>
+            </TableCell>
             <TableCell>
               <Dialog>
                 <DialogTrigger asChild>
@@ -107,22 +94,60 @@ const MatchingTable = ({ matchingData, onStatusChange }) => {
                             <h3 className="text-lg font-semibold">
                               {formatName(companyMatch.company_name)}
                             </h3>
-                            <p className="text-sm text-gray-500">{companyMatch.role}</p>
+                            {companyMatch.role && (
+                              <p className="text-sm text-gray-500">{companyMatch.role}</p>
+                            )}
                           </div>
-                          <div className="text-right">
-                            <span className="text-xl font-bold">
-                              {companyMatch.matchScore.toFixed(1)}%
-                            </span>
-                            <p className="text-sm text-gray-500">Match Score</p>
+                          {companyMatch.matchScore && (
+                            <div className="text-right">
+                              <span className="text-xl font-bold">
+                                {companyMatch.matchScore.toFixed(1)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {companyMatch.matchScore && (
+                          <Progress 
+                            value={companyMatch.matchScore} 
+                            className="mb-4"
+                          />
+                        )}
+
+                        {companyMatch.explanation && (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-medium mb-2">Match Analysis</h4>
+                            <p className="text-sm text-gray-600">
+                              {companyMatch.explanation}
+                            </p>
                           </div>
-                        </div>
-                        <div className="mt-4">
-                          <h4 className="font-medium mb-2">Match Explanation</h4>
-                          <p className="text-sm text-gray-600">{companyMatch.explanation}</p>
-                        </div>
-                        <div className="mt-4">
-                          <Progress value={companyMatch.matchScore} className="h-2" />
-                        </div>
+                        )}
+
+                        {companyMatch.details && (
+                          <div className="mt-4">
+                            <h4 className="font-medium mb-2">Position Details</h4>
+                            {companyMatch.details.requirements?.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="text-sm font-medium text-gray-600 mb-2">Requirements</h5>
+                                <ul className="list-disc list-inside text-sm text-gray-600">
+                                  {companyMatch.details.requirements.map((req, i) => (
+                                    <li key={i}>{req}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {companyMatch.details.jobDescriptions?.length > 0 && (
+                              <div>
+                                <h5 className="text-sm font-medium text-gray-600 mb-2">Job Description</h5>
+                                <ul className="list-disc list-inside text-sm text-gray-600">
+                                  {companyMatch.details.jobDescriptions.map((desc, i) => (
+                                    <li key={i}>{desc.description}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </ScrollArea>
