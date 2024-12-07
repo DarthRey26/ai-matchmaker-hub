@@ -1,8 +1,9 @@
 import express from 'express';
-import { extractStudentInfo, extractCompanyInfo, generateMatchExplanation, calculateMatchScore } from '../../src/services/openaiService.js';
+import { extractStudentInfo, extractCompanyInfo, calculateMatchScore, generateMatchExplanation } from '../../src/services/openaiService.js';
 import { processResumes, processCompanyPDFs } from '../../src/utils/advancedExtraction.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,56 +14,57 @@ router.get('/enhanced-matching', async (req, res) => {
   try {
     console.log('Starting enhanced matching process...');
     
-    // Get student and company documents
     const uploadsDir = path.join(__dirname, '..', 'uploads');
     const studentDir = path.join(uploadsDir, 'students');
     const companyDir = path.join(uploadsDir, 'companies');
 
-    const studentDocs = await processResumes(studentDir);
-    const companyDocs = await processCompanyPDFs(companyDir);
+    // Read PDF files directly
+    const studentFiles = fs.readdirSync(studentDir).filter(f => f.endsWith('.pdf'));
+    const companyFiles = fs.readdirSync(companyDir).filter(f => f.endsWith('.pdf'));
 
-    console.log(`Processing ${studentDocs.length} students and ${companyDocs.length} companies`);
+    console.log(`Processing ${studentFiles.length} students and ${companyFiles.length} companies`);
 
     const matches = [];
 
     // Process each student
-    for (const student of studentDocs) {
-      console.log(`Processing student: ${student.name}`);
+    for (const studentFile of studentFiles) {
+      console.log(`Processing student: ${studentFile}`);
+      const studentPath = path.join(studentDir, studentFile);
+      const studentText = await fs.promises.readFile(studentPath, 'utf8');
       
-      const studentInfo = await extractStudentInfo(student.text);
+      const studentInfo = await extractStudentInfo(studentText);
       if (!studentInfo) {
-        console.error('Failed to extract student info for:', student.name);
+        console.error('Failed to extract student info for:', studentFile);
         continue;
       }
 
       const studentMatches = [];
 
       // Find matches with companies
-      for (const company of companyDocs) {
-        console.log(`Evaluating match with company: ${company.company_name}`);
+      for (const companyFile of companyFiles) {
+        const companyPath = path.join(companyDir, companyFile);
+        const companyText = await fs.promises.readFile(companyPath, 'utf8');
         
-        const companyInfo = await extractCompanyInfo(company.text);
+        const companyInfo = await extractCompanyInfo(companyText);
         if (!companyInfo) {
-          console.error('Failed to extract company info for:', company.company_name);
+          console.error('Failed to extract company info for:', companyFile);
           continue;
         }
-        
-        // Calculate match score
-        const scores = await calculateMatchScore(studentInfo, companyInfo);
-        
-        if (scores && scores.overall >= 40) {
+
+        const matchScore = await calculateMatchScore(studentInfo, companyInfo);
+        if (matchScore && matchScore.overall >= 40) {
           const explanation = await generateMatchExplanation(studentInfo, companyInfo);
           
           studentMatches.push({
-            company_name: company.company_name,
-            role: companyInfo.role,
-            matchScore: scores.overall,
-            skillsMatch: scores.skills,
-            experienceMatch: scores.experience,
+            company_name: companyInfo.company_name || path.basename(companyFile, '.pdf'),
+            role: companyInfo.role || 'Position Not Specified',
+            matchScore: matchScore.overall,
+            skillsMatch: matchScore.skills || 0,
+            experienceMatch: matchScore.experience || 0,
             matchExplanation: explanation,
-            requirements: companyInfo.requirements,
-            studentStrengths: scores.strengths,
-            improvementAreas: scores.improvements
+            requirements: companyInfo.requirements || [],
+            studentStrengths: matchScore.strengths || [],
+            improvementAreas: matchScore.improvements || []
           });
         }
       }
@@ -71,7 +73,7 @@ router.get('/enhanced-matching', async (req, res) => {
       studentMatches.sort((a, b) => b.matchScore - a.matchScore);
 
       matches.push({
-        student: student.name,
+        student: path.basename(studentFile, '.pdf'),
         matches: studentMatches.length > 0 ? studentMatches : [{
           company_name: "No Matches Found",
           matchScore: 0,
