@@ -2,45 +2,23 @@ import OpenAI from 'openai';
 import { toast } from "sonner";
 
 const openai = new OpenAI({
-  apiKey: 'sk-svcacct-kDvOwgXZJdqtNOXVHDZlx5QM-tGOz-RtMawF_rrQUbw8GpwcnHYZjqHSLXMRuxbCzQrPXguaY9kJwT3BlbkFJ5UH7j_TNelMAU1faa0l2wTSfJ4fRBfLNBO4JoZD9UtT8SX55LCHmhAdCRJod7O8wITm6GfwJC7_AA',
+  apiKey: process.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
-export async function extractCompanyInfo(text) {
-  console.log('Extracting company information from:', text.substring(0, 100) + '...');
-  
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{
-        role: "system",
-        content: "Extract structured information from this job posting. Include company name, role, requirements, skills needed, and any other relevant details."
-      }, {
-        role: "user",
-        content: text
-      }],
-      temperature: 0.3,
-    });
-
-    const parsedInfo = JSON.parse(response.choices[0].message.content);
-    console.log('Extracted company information:', parsedInfo);
-    return parsedInfo;
-  } catch (error) {
-    console.error('Error extracting company information:', error);
-    toast.error('Failed to extract company information');
+export async function extractStudentInfo(text) {
+  console.log('Extracting student information...');
+  if (!text || typeof text !== 'string') {
+    console.error('Invalid text input:', text);
     return null;
   }
-}
-
-export async function extractStudentInfo(text) {
-  console.log('Extracting student information from:', text.substring(0, 100) + '...');
   
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{
         role: "system",
-        content: "Extract structured information from this resume. Include name, skills, experience, education, and any other relevant details."
+        content: "Extract structured information from this resume. Include name, skills, experience, education, and any other relevant details. Return as JSON."
       }, {
         role: "user",
         content: text
@@ -58,47 +36,48 @@ export async function extractStudentInfo(text) {
   }
 }
 
-export async function generateMatchExplanation(studentInfo, companyInfo) {
-  console.log('Generating match explanation for:', {
-    student: studentInfo.name,
-    company: companyInfo.company_name
-  });
-  
+export async function extractCompanyInfo(text) {
+  console.log('Extracting company information...');
+  if (!text || typeof text !== 'string') {
+    console.error('Invalid text input:', text);
+    return null;
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{
         role: "system",
-        content: "Analyze the match between a student and company position. Provide detailed explanation of match strength, highlighting alignments and gaps."
+        content: "Extract structured information from this job posting. Include company name, role, requirements, skills needed, and any other relevant details. Return as JSON."
       }, {
         role: "user",
-        content: JSON.stringify({ student: studentInfo, company: companyInfo })
+        content: text
       }],
       temperature: 0.3,
     });
 
-    const explanation = response.choices[0].message.content;
-    console.log('Generated match explanation:', explanation);
-    return explanation;
+    const parsedInfo = JSON.parse(response.choices[0].message.content);
+    console.log('Extracted company information:', parsedInfo);
+    return parsedInfo;
   } catch (error) {
-    console.error('Error generating match explanation:', error);
-    toast.error('Failed to generate match explanation');
+    console.error('Error extracting company information:', error);
+    toast.error('Failed to extract company information');
     return null;
   }
 }
 
 export async function calculateMatchScore(studentInfo, companyInfo) {
-  console.log('Calculating match score between:', {
-    student: studentInfo.name,
-    company: companyInfo.company_name
-  });
-  
+  if (!studentInfo || !companyInfo) {
+    console.error('Missing input for match calculation:', { studentInfo, companyInfo });
+    return null;
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{
         role: "system",
-        content: "Calculate a match score (0-100) between student and company position. Consider skills, experience, education, and requirements. Return JSON with overall score and component scores."
+        content: "Calculate match scores between student and job position. Consider skills, experience, and requirements. Return JSON with overall score (0-100), skills match, experience match, strengths, and areas for improvement."
       }, {
         role: "user",
         content: JSON.stringify({ student: studentInfo, company: companyInfo })
@@ -107,12 +86,37 @@ export async function calculateMatchScore(studentInfo, companyInfo) {
     });
 
     const scores = JSON.parse(response.choices[0].message.content);
-    console.log('Calculated match scores:', scores);
+    console.log('Match scores calculated:', scores);
     return scores;
   } catch (error) {
     console.error('Error calculating match score:', error);
     toast.error('Failed to calculate match score');
     return null;
+  }
+}
+
+export async function generateMatchExplanation(studentInfo, companyInfo) {
+  if (!studentInfo || !companyInfo) {
+    return "Unable to generate explanation due to missing information.";
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{
+        role: "system",
+        content: "Provide a detailed explanation of the match between student and company position. Highlight strengths and potential areas for growth. Be specific and constructive."
+      }, {
+        role: "user",
+        content: JSON.stringify({ student: studentInfo, company: companyInfo })
+      }],
+      temperature: 0.3,
+    });
+
+    return response.choices[0].message.content;
+  } catch (error) {
+    console.error('Error generating match explanation:', error);
+    return "Error generating match explanation.";
   }
 }
 
@@ -138,8 +142,8 @@ export async function generateMatchingResults(studentData, companyData) {
           const explanation = await generateMatchExplanation(student, company);
           
           studentMatches.push({
-            company_name: company.company_name,
-            role: company.role || 'Role not specified',
+            company_name: company.company_name || 'Company Name Not Available',
+            role: company.role || 'Role Not Specified',
             matchScore: matchScore.overall,
             skillsMatch: matchScore.skills || 0,
             experienceMatch: matchScore.experience || 0,
