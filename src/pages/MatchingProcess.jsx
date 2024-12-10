@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Sidebar from '../components/Sidebar';
 import { generateCSV, downloadCSV } from '../utils/csvUtils';
 import MatchingTable from '../components/MatchingTable';
+import CostTracker from '../components/CostTracker';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from "sonner";
 
@@ -14,13 +15,13 @@ const MatchingProcess = () => {
       const response = await fetch('http://localhost:3001/api/matching/enhanced-matching');
       if (!response.ok) throw new Error('Failed to fetch matching data');
       const data = await response.json();
-      return data.matches;
+      return data;
     },
   });
 
   const handleDownloadCSV = () => {
-    if (matchingData?.length) {
-      const csvData = generateCSV(matchingData);
+    if (matchingData?.matches?.length) {
+      const csvData = generateCSV(matchingData.matches);
       downloadCSV(csvData, 'matching-results.csv');
       toast.success('CSV file downloaded successfully');
     } else {
@@ -43,7 +44,7 @@ const MatchingProcess = () => {
                 <CardTitle>AI-Enhanced Matching Results</CardTitle>
                 <Button 
                   onClick={handleDownloadCSV}
-                  disabled={!matchingData?.length || isLoading}
+                  disabled={!matchingData?.matches?.length || isLoading}
                 >
                   Download CSV
                 </Button>
@@ -51,9 +52,12 @@ const MatchingProcess = () => {
             </CardHeader>
             <CardContent>
               <MatchingTable 
-                matchingData={matchingData || []}
+                matchingData={matchingData?.matches || []}
                 isLoading={isLoading}
               />
+              {matchingData?.tokensUsed && (
+                <CostTracker tokensUsed={matchingData.tokensUsed} />
+              )}
             </CardContent>
           </Card>
         </div>

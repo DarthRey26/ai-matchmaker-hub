@@ -1,8 +1,9 @@
-import OpenAI from 'openai';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
+  apiKey: process.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: false // Disable browser-side API calls for security
 });
 
-export default openai; 
+export default openai;
