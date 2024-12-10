@@ -7,16 +7,30 @@ import MatchingTable from '../components/MatchingTable';
 import CostTracker from '../components/CostTracker';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from "sonner";
+import { useNavigate } from 'react-router-dom';
 
 const MatchingProcess = () => {
+  const navigate = useNavigate();
+
   const { data: matchingData, isLoading, error } = useQuery({
     queryKey: ['matching'],
-    queryFn: async () => {
-      const response = await fetch('http://localhost:3001/api/matching/enhanced-matching');
-      if (!response.ok) throw new Error('Failed to fetch matching data');
-      const data = await response.json();
-      return data;
+    queryFn: async ({ signal }) => {
+      try {
+        const response = await fetch('http://localhost:3001/api/matching/enhanced-matching', {
+          signal
+        });
+        if (!response.ok) throw new Error('Failed to fetch matching data');
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          navigate('/matching');
+          return null;
+        }
+        throw error;
+      }
     },
+    retry: false
   });
 
   const handleDownloadCSV = () => {

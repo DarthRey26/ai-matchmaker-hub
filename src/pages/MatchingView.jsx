@@ -1,15 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Sidebar from '../components/Sidebar';
 import { toast } from "sonner";
+import Sidebar from '../components/Sidebar';
+import { Play, StopCircle, Loader2 } from 'lucide-react';
 
 const MatchingView = () => {
   const navigate = useNavigate();
+  const [isMatching, setIsMatching] = useState(false);
+  const [controller, setController] = useState(null);
 
-  const handleStartMatching = () => {
-    navigate('/matching/process');
+  const handleStartMatching = async () => {
+    setIsMatching(true);
+    const abortController = new AbortController();
+    setController(abortController);
+
+    try {
+      navigate('/matching/process');
+      toast.success('Starting matching process...');
+    } catch (error) {
+      toast.error('Failed to start matching process');
+      console.error('Matching error:', error);
+      setIsMatching(false);
+    }
+  };
+
+  const handleStopMatching = () => {
+    if (controller) {
+      controller.abort();
+      setController(null);
+      setIsMatching(false);
+      toast.info('Matching process interrupted');
+    }
   };
 
   return (
@@ -21,17 +44,40 @@ const MatchingView = () => {
           <CardHeader>
             <CardTitle>Start Matching Process</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">
               Click below to start the AI-powered matching process. Our system will analyze student resumes 
               and company requirements to find the best matches.
             </p>
-            <Button 
-              onClick={handleStartMatching}
-              className="w-full"
-            >
-              Start Matching
-            </Button>
+            <div className="flex gap-4">
+              <Button 
+                onClick={handleStartMatching}
+                disabled={isMatching}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                {isMatching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Matching
+                  </>
+                )}
+              </Button>
+              {isMatching && (
+                <Button 
+                  onClick={handleStopMatching}
+                  variant="destructive"
+                  className="w-1/3"
+                >
+                  <StopCircle className="mr-2 h-4 w-4" />
+                  Stop
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
